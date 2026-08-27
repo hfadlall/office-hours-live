@@ -25,24 +25,27 @@ not guess: it shows students "check with the CA" instead.
 
 ---
 
-## (b) One-time setup — the sheet (Hussein)
+## (b) The sheet (Hussein)
 
-1. Create a new Google Sheet called **70-110 Office Hours Changes**.
-2. Paste in the header row from `exceptions_template.csv`:
-   `date, person, status, time, new_time, note` — one column each, spelled exactly.
-   Delete the three example rows once you have looked at them.
-3. **File ▸ Share ▸ Publish to web**. Under *Link*, choose the sheet (not "Entire
-   document") and change the format from *Web page* to **Comma-separated values (.csv)**.
-   Press **Publish** and copy the link it gives you. It ends in `output=csv`.
-4. Paste that link between the quotes on **line 425 of `index.html`**:
+The sheet is created, published as CSV, and already wired into the page — the link
+sits on **line 425 of `index.html`** and was checked end to end: it answers `200` with
+`text/csv` and `Access-Control-Allow-Origin: *`, so any browser on any host can read it.
+Right now it holds only the header row, and the page correctly says
+*"No changes this week ✓"*.
 
-   ```js
-   SHEET_CSV_URL: "https://docs.google.com/spreadsheets/d/e/…/pub?output=csv",
-   ```
+**The one step left:** open the sheet ▸ **Share** ▸ add each CA as **Editor**. Publishing
+to the web only makes it *readable* by the page; it does not let anyone write to it.
 
-5. **Share ▸ General access** the sheet itself with the CAs as *Editor*. Publishing to
-   the web only makes it readable; it does not let them write.
-6. Commit and push. The page will show `Live · updated …` in the banner.
+If you ever re-publish and the link changes, replace the string on line 425:
+
+```js
+SHEET_CSV_URL: "https://docs.google.com/spreadsheets/d/e/…/pub?output=csv",
+```
+
+Keep the columns spelled as in `exceptions_template.csv` —
+`date, person, status, time, new_time, note`. The page also accepts a few obvious
+synonyms (`name` for `person`, `reason` for `note`) and can read the columns
+positionally if the header row is ever deleted by accident.
 
 > **Google caches the published CSV for about five minutes.** An edit is not instant —
 > tell the CAs to add the row a little before it matters, not thirty seconds before.
@@ -125,13 +128,22 @@ Hassib) but `Abdul Hassib` works, and quoted notes containing commas are fine.
 
 ## Deploying
 
-The site is a single static file, so any host works. For GitHub Pages:
+The repository is initialised and committed. GitHub CLI 2.98 is installed but not
+logged in, so the push has not happened yet. In a **new** terminal (the installer put
+`gh` on your PATH, which existing terminals will not have picked up), from this folder:
 
-```bash
+```powershell
+gh auth login
 gh repo create office-hours-live --public --source . --push
-gh api -X POST repos/:owner/office-hours-live/pages -f build_type=legacy -f 'source[branch]=main' -f 'source[path]=/'
-gh browse --repo <you>/office-hours-live --settings
+gh api -X POST "repos/$(gh api user -q .login)/office-hours-live/pages" -f "source[branch]=main" -f "source[path]=/"
 ```
 
-The published URL is `https://<your-github-username>.github.io/office-hours-live/`.
-It can take a minute or two to go live the first time.
+That is it — the site appears at
+`https://<your-github-username>.github.io/office-hours-live/` a minute or two later.
+To check it is up:
+
+```powershell
+(Invoke-WebRequest "https://$(gh api user -q .login).github.io/office-hours-live/" -UseBasicParsing).StatusCode
+```
+
+Any static host works just as well; the page is one file with no dependencies.
