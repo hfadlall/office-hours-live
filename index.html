@@ -72,6 +72,25 @@
   .swatch.ta{background:var(--ta);}
   .swatch.prof{background:var(--prof);}
 
+  /* ---------- contact strip ---------- */
+
+  /* under the grid, so the addresses survive printing and the PDF */
+  .contacts{
+    display:flex;
+    flex-wrap:wrap;
+    gap:2px 10px;
+    margin:9px 0 0;
+    font-size:9.5px;
+    color:var(--muted);
+    letter-spacing:0;
+    line-height:1.35;
+  }
+
+  .contacts .contact{white-space:nowrap;}
+  .contacts .c-dot{color:var(--rule-hour);}
+  .contacts a{color:inherit;text-decoration:none;}
+  .contacts a:hover{text-decoration:underline;}
+
   /* ---------- live banner ---------- */
 
   .banner{
@@ -250,6 +269,11 @@
     letter-spacing:.01em;
   }
 
+  /* the name is a mailto link but must not read as one inside the block */
+  a.who{color:inherit;text-decoration:none;}
+  a.who:hover{text-decoration:underline;}
+  a.who:focus-visible{outline:1px solid #fff;outline-offset:1px;}
+
   .when{
     font-size:10px;
     line-height:1.15;
@@ -396,6 +420,8 @@
 
   <div class="board" id="board"></div>
 
+  <div class="contacts" id="contacts"></div>
+
 </div>
 
 <div id="selftest" hidden></div>
@@ -437,16 +463,18 @@ var CONFIG = {
 /* ─── 2. THE SCHEDULE (authoritative) ───────────────────────────────────── */
 
 /*  Who runs office hours, where, and in which colour.
-    role: "ca" = maroon, "ta" = navy, "prof" = green.                        */
+    role: "ca" = maroon, "ta" = navy, "prof" = green.
+    email: an address here becomes a mailto link on the name and a line in the
+    contact strip. Leave it null and neither is drawn.                       */
 
 var ROSTER = [
-  { name: "Darya",        role: "ca",   where: "ARC"         },
-  { name: "Abdullah",     role: "ca",   where: "ARC"         },
-  { name: "Joy",          role: "ca",   where: "ARC"         },
-  { name: "Abdul Hassib", role: "ca",   where: "ARC"         },
-  { name: "Oselumese",    role: "ca",   where: "ARC"         },
-  { name: "Aicha",        role: "ta",   where: "Office 2145" },
-  { name: "Instructor",   role: "prof", where: "Office 2144" }
+  { name: "Darya",        role: "ca",   where: "ARC",         email: "dzhuk@andrew.cmu.edu"    },
+  { name: "Abdullah",     role: "ca",   where: "ARC",         email: "aarshad@andrew.cmu.edu"  },
+  { name: "Joy",          role: "ca",   where: "ARC",         email: "joyk@andrew.cmu.edu"     },
+  { name: "Abdul Hassib", role: "ca",   where: "ARC",         email: "aistwani@andrew.cmu.edu" },
+  { name: "Oselumese",    role: "ca",   where: "ARC",         email: "ookoruwa@andrew.cmu.edu" },
+  { name: "Aicha",        role: "ta",   where: "Office 2145", email: "amalouch@andrew.cmu.edu" },
+  { name: "Instructor",   role: "prof", where: "Office 2144", email: null /* PLACEHOLDER — no address published yet */ }
 ];
 
 /*  day: 0 = Sunday, 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday
@@ -454,7 +482,7 @@ var ROSTER = [
 
 var BASE_SCHEDULE = [
   /* Sunday    */
-  { day: 0, person: "Darya",        start: "10:00", end: "11:30" },
+  { day: 0, person: "Darya",        start: "10:00", end: "11:00" },
   { day: 0, person: "Instructor",   start: "14:30", end: "15:45" },
   { day: 0, person: "Joy",          start: "16:00", end: "17:00" },
   /* Monday    */
@@ -462,7 +490,7 @@ var BASE_SCHEDULE = [
   { day: 1, person: "Aicha",        start: "15:00", end: "16:00" },
   { day: 1, person: "Abdul Hassib", start: "15:30", end: "16:30" },
   /* Tuesday   */
-  { day: 2, person: "Darya",        start: "10:00", end: "11:30" },
+  { day: 2, person: "Darya",        start: "10:00", end: "11:00" },
   { day: 2, person: "Instructor",   start: "14:30", end: "15:45" },
   { day: 2, person: "Joy",          start: "16:00", end: "17:00" },
   /* Wednesday */
@@ -925,6 +953,38 @@ function gutterTicks() {
   return out;
 }
 
+function nameEl(person) {
+  if (!person.email) return el('span', 'who', person.name);
+  var a = el('a', 'who', person.name);
+  a.href = 'mailto:' + person.email;
+  a.title = person.email;
+  return a;
+}
+
+/*  One line of "Name · address" for everyone who has an address. It sits under
+    the grid so students can read it on paper, where a mailto link is no use.  */
+function contactsEl() {
+  var frag = document.createDocumentFragment();
+  ROSTER.forEach(function (p) {
+    if (!p.email) return;
+    var item = el('span', 'contact');
+    item.appendChild(el('span', 'c-name', p.name));
+    item.appendChild(el('span', 'c-dot', ' · '));
+    var a = el('a', 'c-mail', p.email);
+    a.href = 'mailto:' + p.email;
+    item.appendChild(a);
+    frag.appendChild(item);
+  });
+  return frag;
+}
+
+function renderContacts() {
+  var box = document.getElementById('contacts');
+  if (!box) return;
+  box.textContent = '';
+  box.appendChild(contactsEl());
+}
+
 function blockEl(s) {
   var role = s.person.role;
   var n = el('div', 'block' + (role === 'ta' ? ' ta' : role === 'prof' ? ' prof' : ''));
@@ -945,7 +1005,7 @@ function blockEl(s) {
   n.style.setProperty('--start', s.start - DAY_START_MIN);
   n.style.setProperty('--dur', s.end - s.start);
 
-  n.appendChild(el('span', 'who', s.person.name));
+  n.appendChild(nameEl(s.person));
   n.appendChild(el('span', 'when', timeSpan(
     s.trueStart !== undefined ? s.trueStart : s.start,
     s.trueEnd   !== undefined ? s.trueEnd   : s.end)));
@@ -1012,8 +1072,11 @@ function fitToScreen() {
   if (!board || !head) return;
 
   var top   = board.getBoundingClientRect().top + (window.pageYOffset || 0);
+  var strip = document.getElementById('contacts');
+  /* the contact strip and its 9px margin sit between the grid and the padding */
+  var below = strip && strip.firstChild ? strip.getBoundingClientRect().height + 9 : 0;
   /* 24px of page padding below the grid, plus the board's own hairline border */
-  var avail = window.innerHeight - top - head.getBoundingClientRect().height - 28;
+  var avail = window.innerHeight - top - head.getBoundingClientRect().height - 28 - below;
   var per   = avail / (DAY_END_MIN - DAY_START_MIN);
   if (!isFinite(per) || per <= 0) { trimBlocks(1.24); return; }
 
@@ -1150,6 +1213,8 @@ function draw(nowMs, csvText) {
 function boot() {
   document.documentElement.style.setProperty('--span', String(DAY_END_MIN - DAY_START_MIN));
   document.documentElement.style.setProperty('--gridoff', String((Math.ceil(DAY_START_MIN / 60) * 60) - DAY_START_MIN || 60));
+
+  renderContacts();
 
   /* the base grid is painted first, so the page is never blank or late */
   draw(Date.now(), null);
@@ -1398,6 +1463,60 @@ function runSelfTests() {
       if (!(r.day >= 0 && r.day <= 4))  bad.push('line ' + (i + 1) + ': day must be 0–4');
     });
     return need(bad.length === 0, bad.join('; '));
+  });
+
+  t('Darya runs 10:00 – 11:00 on Sunday and Tuesday, one session each day', function () {
+    var sim = simulate('', TUE);
+    var bad = [];
+    [0, 2].forEach(function (d) {
+      var mine = sessions(sim, d, 'Darya');
+      if (mine.length !== 1) { bad.push(DAY_LONG[d] + ': ' + mine.length + ' sessions'); return; }
+      if (mine[0].start !== hm('10:00') || mine[0].end !== hm('11:00')) {
+        bad.push(DAY_LONG[d] + ': ' + timeSpan(mine[0].start, mine[0].end));
+      }
+    });
+    return need(bad.length === 0, bad.join('; '));
+  });
+
+  t('A Darya row with no time is not ambiguous — her one session takes it', function () {
+    var sim = simulate(HEAD + '2026-09-01,Darya,cancelled,,,Travelling\n', TUE);
+    var tue = sessions(sim, 2, 'Darya')[0];
+    if (tue.state !== 'cancelled') return 'Tuesday state = ' + tue.state;
+    if (sim.notices.length) return 'notices = ' + JSON.stringify(sim.notices);
+    return need(!sessions(sim, 0, 'Darya')[0].state, 'Sunday was changed too');
+  });
+
+  t('Every name on the roster has an email except the Instructor placeholder', function () {
+    var bad = ROSTER.filter(function (p) {
+      return p.name === 'Instructor' ? p.email !== null
+                                     : !/^[^@\s]+@andrew\.cmu\.edu$/.test(String(p.email));
+    });
+    return need(bad.length === 0, bad.map(function (p) { return p.name + '=' + p.email; }).join(', '));
+  });
+
+  t('A block name is a mailto link; the Instructor block is plain text', function () {
+    var sim = simulate('', TUE);
+    var ca   = blockEl(sessions(sim, 2, 'Darya')[0]);
+    var prof = blockEl(sessions(sim, 2, 'Instructor')[0]);
+    var a = ca.querySelector('a.who');
+    if (!a || a.getAttribute('href') !== 'mailto:dzhuk@andrew.cmu.edu') {
+      return 'Darya link = ' + (a ? a.getAttribute('href') : 'none');
+    }
+    if (a.textContent !== 'Darya') return 'link text = ' + a.textContent;
+    return need(!prof.querySelector('a') && prof.textContent.indexOf('Instructor') >= 0,
+                'Instructor block = ' + prof.innerHTML);
+  });
+
+  t('The contact strip lists all six addresses and nothing for the Instructor', function () {
+    var box = el('div');
+    box.appendChild(contactsEl());
+    var items = box.querySelectorAll('.contact');
+    if (items.length !== 6) return 'expected 6 entries, got ' + items.length;
+    if (/Instructor/.test(box.textContent)) return 'the Instructor placeholder was rendered';
+    var missing = ROSTER.filter(function (p) {
+      return p.email && box.textContent.indexOf(p.name + ' · ' + p.email) < 0;
+    });
+    return need(missing.length === 0, 'not listed: ' + missing.map(function (p) { return p.name; }).join(', '));
   });
 
   t('Junk input of every shape is survived', function () {

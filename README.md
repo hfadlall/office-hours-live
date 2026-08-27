@@ -28,7 +28,7 @@ not guess: it shows students "check with the CA" instead.
 ## (b) The sheet (Hussein)
 
 The sheet is created, published as CSV, and already wired into the page — the link
-sits on **line 425 of `index.html`** and was checked end to end: it answers `200` with
+sits on **line 451 of `index.html`** and was checked end to end: it answers `200` with
 `text/csv` and `Access-Control-Allow-Origin: *`, so any browser on any host can read it.
 Right now it holds only the header row, and the page correctly says
 *"No changes this week ✓"*.
@@ -36,7 +36,7 @@ Right now it holds only the header row, and the page correctly says
 **The one step left:** open the sheet ▸ **Share** ▸ add each CA as **Editor**. Publishing
 to the web only makes it *readable* by the page; it does not let anyone write to it.
 
-If you ever re-publish and the link changes, replace the string on line 425:
+If you ever re-publish and the link changes, replace the string on line 451:
 
 ```js
 SHEET_CSV_URL: "https://docs.google.com/spreadsheets/d/e/…/pub?output=csv",
@@ -58,27 +58,30 @@ default."* It never shows a blank or broken page.
 
 ## (c) Changing the base schedule later
 
-Open `index.html` and edit `BASE_SCHEDULE`, which starts at **line 455**. One line per
+Open `index.html` and edit `BASE_SCHEDULE`, which starts at **line 483**. One line per
 session:
 
 ```js
-{ day: 0, person: "Darya", start: "10:00", end: "11:30" },
+{ day: 0, person: "Darya", start: "10:00", end: "11:00" },
 ```
 
 * `day` — `0` Sunday, `1` Monday, `2` Tuesday, `3` Wednesday, `4` Thursday.
 * `start` / `end` — 24-hour, `"HH:MM"`.
-* `person` — must match a name in `ROSTER` just above it (line 442).
+* `person` — must match a name in `ROSTER` just above it (line 470).
 
 To add or remove a **person**, edit `ROSTER`:
 
 ```js
-{ name: "Sara", role: "ca", where: "ARC" },
+{ name: "Sara", role: "ca", where: "ARC", email: "sara@andrew.cmu.edu" },
 ```
 
 `role` picks the colour and is one of `ca` (maroon), `ta` (navy), `prof` (green);
 `where` is the room printed on their blocks and used for any extra session they add.
+`email` turns the name on every block into a mailto link and adds the person to the
+contact strip under the grid; set it to `null` and neither appears (the Instructor
+row is left that way on purpose until an address is agreed).
 
-Save, reload, and press **T** — a hidden self-test runs and should say *26/26 passed*.
+Save, reload, and press **T** — a hidden self-test runs and should say *31/31 passed*.
 It checks, among other things, that every line of the schedule is internally
 consistent. The legend under the title is plain HTML in the same file; edit it by hand
 if the roles ever change.
