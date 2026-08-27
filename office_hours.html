@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>70-110 Business Computing — Office Hours</title>
+<style>
+  :root{
+    --ca:#8A1220;        /* Course Assistants · ARC */
+    --ta:#274060;        /* Aicha · Office 2145 */
+    --prof:#1E5A46;      /* Instructor · Office 2144 */
+    --rule:#E6E6E6;
+    --rule-hour:#CFCFCF;
+    --ink:#111214;
+    --muted:#8A8A8E;
+    --min:1.7px;          /* vertical scale: 1 minute */
+    --gutter:72px;
+    --font:"Helvetica Neue",Helvetica,Arial,"Segoe UI",sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:#fff;
+    color:var(--ink);
+    font-family:var(--font);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .sheet{
+    max-width:1080px;
+    margin:0 auto;
+    padding:40px 32px 48px;
+  }
+
+  h1{
+    margin:0 0 2px;
+    font-size:19px;
+    font-weight:600;
+    letter-spacing:.01em;
+  }
+
+  .sub{
+    margin:0 0 18px;
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:.02em;
+  }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    margin:0 0 16px;
+    font-size:11px;
+    color:var(--muted);
+    letter-spacing:.02em;
+  }
+
+  .key{display:flex;align-items:center;gap:7px;white-space:nowrap;}
+
+  .swatch{width:11px;height:11px;border-radius:2px;flex:none;}
+  .swatch.ca{background:var(--ca);}
+  .swatch.ta{background:var(--ta);}
+  .swatch.prof{background:var(--prof);}
+
+  /* ---------- grid shell ---------- */
+
+  .board{
+    display:grid;
+    grid-template-columns:var(--gutter) repeat(5,1fr);
+    border-top:1px solid var(--rule-hour);
+    border-left:1px solid var(--rule);
+  }
+
+  .head{
+    padding:10px 8px;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    text-align:center;
+    border-right:1px solid var(--rule);
+    border-bottom:1px solid var(--rule-hour);
+  }
+
+  /* ---------- time gutter ---------- */
+
+  .gutter{
+    position:relative;
+    height:calc(510 * var(--min));   /* 08:30 → 17:00 */
+    border-right:1px solid var(--rule);
+  }
+
+  .tick{
+    position:absolute;
+    right:8px;
+    top:calc(var(--at) * var(--min));
+    transform:translateY(-50%);
+    font-size:10px;
+    font-variant-numeric:tabular-lining-nums;
+    color:var(--muted);
+    letter-spacing:.03em;
+    white-space:nowrap;
+  }
+
+  /* ---------- day columns ---------- */
+
+  .day{
+    position:relative;
+    height:calc(510 * var(--min));
+    border-right:1px solid var(--rule);
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        var(--rule) 0 1px,
+        transparent 1px calc(60 * var(--min))
+      );
+    background-position:0 calc(30 * var(--min));
+  }
+
+  /* ---------- blocks ---------- */
+
+  .block{
+    position:absolute;
+    left:3px;
+    right:3px;
+    top:calc(var(--start) * var(--min));
+    height:calc(var(--dur) * var(--min) - 2px);
+    background:var(--ca);
+    color:#fff;
+    border-radius:2px;
+    padding:6px 8px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+    overflow:hidden;
+  }
+
+  .block.ta{background:var(--ta);}
+  .block.prof{background:var(--prof);}
+
+  /* side-by-side halves for overlapping hours */
+  .block.left{right:calc(50% + 2px);}
+  .block.right{left:calc(50% + 2px);}
+  .block.left,.block.right{padding:4px 6px;gap:1px;}
+  .block.left .who,.block.right .who{font-size:10px;line-height:1.1;}
+  .block.left .when,.block.right .when{font-size:8.5px;}
+  .block.left .where,.block.right .where{font-size:8px;}
+
+  .who{
+    font-size:12px;
+    font-weight:600;
+    line-height:1.15;
+    letter-spacing:.01em;
+  }
+
+  .when{
+    font-size:10px;
+    line-height:1.15;
+    color:rgba(255,255,255,.8);
+    font-variant-numeric:tabular-lining-nums;
+    letter-spacing:.02em;
+  }
+
+  .where{
+    font-size:9.5px;
+    line-height:1.15;
+    color:rgba(255,255,255,.65);
+    letter-spacing:.04em;
+    text-transform:uppercase;
+  }
+
+  /* ---------- print ---------- */
+
+  @page{size:A4 landscape;margin:11mm;}
+
+  @media print{
+    :root{--min:1.05px;--gutter:60px;}
+    .sheet{padding:0;max-width:none;}
+    .block,.day,.board,.swatch{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+
+  @media (max-width:720px){
+    :root{--min:1.45px;--gutter:52px;}
+    .sheet{padding:24px 12px 36px;}
+    .who{font-size:10px;}
+    .when{font-size:9px;}
+    .where{font-size:8px;}
+    .head{font-size:9px;letter-spacing:.05em;padding:8px 2px;}
+    .block{padding:4px 5px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <h1>70-110 Business Computing — Office Hours</h1>
+  <p class="sub">Every week, Sunday to Thursday</p>
+
+  <div class="legend">
+    <span class="key"><span class="swatch ca"></span>Course Assistants · ARC</span>
+    <span class="key"><span class="swatch ta"></span>Aicha (TA) · Office 2145</span>
+    <span class="key"><span class="swatch prof"></span>Instructor · Office 2144</span>
+  </div>
+
+  <div class="board">
+
+    <!-- header row -->
+    <div class="head"></div>
+    <div class="head">Sunday</div>
+    <div class="head">Monday</div>
+    <div class="head">Tuesday</div>
+    <div class="head">Wednesday</div>
+    <div class="head">Thursday</div>
+
+    <!-- time gutter -->
+    <div class="gutter">
+      <div class="tick" style="--at:0">8:30 AM</div>
+      <div class="tick" style="--at:30">9:00 AM</div>
+      <div class="tick" style="--at:90">10:00 AM</div>
+      <div class="tick" style="--at:150">11:00 AM</div>
+      <div class="tick" style="--at:210">12:00 PM</div>
+      <div class="tick" style="--at:270">1:00 PM</div>
+      <div class="tick" style="--at:330">2:00 PM</div>
+      <div class="tick" style="--at:390">3:00 PM</div>
+      <div class="tick" style="--at:450">4:00 PM</div>
+      <div class="tick" style="--at:510">5:00 PM</div>
+    </div>
+
+    <!-- SUNDAY -->
+    <div class="day">
+      <div class="block" style="--start:90;--dur:90">
+        <span class="who">Darya</span>
+        <span class="when">10:00 – 11:30</span>
+        <span class="where">ARC</span>
+      </div>
+      <div class="block prof" style="--start:360;--dur:75">
+        <span class="who">Instructor</span>
+        <span class="when">2:30 – 3:45</span>
+        <span class="where">Office 2144</span>
+      </div>
+      <div class="block" style="--start:450;--dur:60">
+        <span class="who">Joy</span>
+        <span class="when">4:00 – 5:00</span>
+        <span class="where">ARC</span>
+      </div>
+    </div>
+
+    <!-- MONDAY -->
+    <div class="day">
+      <div class="block" style="--start:90;--dur:60">
+        <span class="who">Abdullah</span>
+        <span class="when">10:00 – 11:00</span>
+        <span class="where">ARC</span>
+      </div>
+      <div class="block ta left" style="--start:390;--dur:60">
+        <span class="who">Aicha</span>
+        <span class="when">3:00 – 4:00</span>
+        <span class="where">Office 2145</span>
+      </div>
+      <div class="block right" style="--start:420;--dur:60">
+        <span class="who">Abdul Hassib</span>
+        <span class="when">3:30 – 4:30</span>
+        <span class="where">ARC</span>
+      </div>
+    </div>
+
+    <!-- TUESDAY -->
+    <div class="day">
+      <div class="block" style="--start:90;--dur:90">
+        <span class="who">Darya</span>
+        <span class="when">10:00 – 11:30</span>
+        <span class="where">ARC</span>
+      </div>
+      <div class="block prof" style="--start:360;--dur:75">
+        <span class="who">Instructor</span>
+        <span class="when">2:30 – 3:45</span>
+        <span class="where">Office 2144</span>
+      </div>
+      <div class="block" style="--start:450;--dur:60">
+        <span class="who">Joy</span>
+        <span class="when">4:00 – 5:00</span>
+        <span class="where">ARC</span>
+      </div>
+    </div>
+
+    <!-- WEDNESDAY -->
+    <div class="day">
+      <div class="block" style="--start:90;--dur:60">
+        <span class="who">Abdullah</span>
+        <span class="when">10:00 – 11:00</span>
+        <span class="where">ARC</span>
+      </div>
+      <div class="block ta left" style="--start:390;--dur:60">
+        <span class="who">Aicha</span>
+        <span class="when">3:00 – 4:00</span>
+        <span class="where">Office 2145</span>
+      </div>
+      <div class="block right" style="--start:420;--dur:60">
+        <span class="who">Abdul Hassib</span>
+        <span class="when">3:30 – 4:30</span>
+        <span class="where">ARC</span>
+      </div>
+    </div>
+
+    <!-- THURSDAY -->
+    <div class="day">
+      <div class="block" style="--start:90;--dur:60">
+        <span class="who">Oselumese</span>
+        <span class="when">10:00 – 11:00</span>
+        <span class="where">ARC</span>
+      </div>
+      <div class="block" style="--start:420;--dur:60">
+        <span class="who">Oselumese</span>
+        <span class="when">3:30 – 4:30</span>
+        <span class="where">ARC</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

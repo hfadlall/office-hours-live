@@ -1,0 +1,4 @@
+date,person,status,time,new_time,note
+2026-08-16,Darya,cancelled,10:00,,Example row - delete me
+2026-08-17,Aicha,moved,15:00,16:00-17:00,Example row - delete me
+2026-08-19,Oselumese,extra,13:00,14:00,Example row - delete me

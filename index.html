@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>70-110 Business Computing — Office Hours</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%238A1220'/%3E%3Crect x='7' y='9' width='18' height='2.6' rx='1.3' fill='%23ffffff'/%3E%3Crect x='7' y='15' width='18' height='2.6' rx='1.3' fill='%23ffffffaa'/%3E%3Crect x='7' y='21' width='11' height='2.6' rx='1.3' fill='%23ffffff77'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --ca:#8A1220;        /* Course Assistants · ARC */
+    --ta:#274060;        /* Aicha · Office 2145 */
+    --prof:#1E5A46;      /* Instructor · Office 2144 */
+    --rule:#E6E6E6;
+    --rule-hour:#CFCFCF;
+    --ink:#111214;
+    --muted:#8A8A8E;
+    --span:510;          /* minutes drawn: 08:30 -> 17:00 (set from CONFIG at load) */
+    --gridoff:30;        /* minutes from the top rule to the first whole hour */
+    /* vertical scale: 1 minute. --min-fit is measured at load so the whole
+       grid lands on one screen; the clamp is the value used before that. */
+    --min-auto:clamp(1.24px, calc((100vh - 300px) / var(--span)), 1.7px);
+    --min:var(--min-fit, var(--min-auto));
+    --gutter:72px;
+    --font:"Helvetica Neue",Helvetica,Arial,"Segoe UI",sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:#fff;
+    color:var(--ink);
+    font-family:var(--font);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .sheet{
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 32px 24px;
+  }
+
+  h1{
+    margin:0 0 2px;
+    font-size:19px;
+    font-weight:600;
+    letter-spacing:.01em;
+  }
+
+  .sub{
+    margin:0 0 14px;
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:.02em;
+  }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    margin:0 0 14px;
+    font-size:11px;
+    color:var(--muted);
+    letter-spacing:.02em;
+  }
+
+  .key{display:flex;align-items:center;gap:7px;white-space:nowrap;}
+
+  .swatch{width:11px;height:11px;border-radius:2px;flex:none;}
+  .swatch.ca{background:var(--ca);}
+  .swatch.ta{background:var(--ta);}
+  .swatch.prof{background:var(--prof);}
+
+  /* ---------- live banner ---------- */
+
+  .banner{
+    margin:0 0 12px;
+    padding:0 0 10px;
+    border-bottom:1px solid var(--rule);
+    font-size:11.5px;
+    letter-spacing:.02em;
+    line-height:1.55;
+  }
+
+  .banner .row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    gap:2px 16px;
+  }
+
+  .banner .headline{flex:1 1 420px;min-width:0;}
+  .banner .label{font-weight:600;}
+  .banner .ok{font-weight:600;}
+  .banner .sep{color:var(--muted);padding:0 5px;}
+  .banner .meta{
+    color:var(--muted);
+    font-size:10.5px;
+    white-space:nowrap;
+    margin-left:auto;
+    font-variant-numeric:tabular-lining-nums;
+  }
+  .banner .quiet{color:var(--muted);}
+  .banner .notice{color:var(--muted);display:block;}
+
+  .upcoming{margin-top:3px;font-size:10.5px;color:var(--muted);}
+  .upcoming summary{
+    cursor:pointer;
+    list-style:none;
+    display:inline-block;
+    letter-spacing:.02em;
+  }
+  .upcoming summary::-webkit-details-marker{display:none;}
+  .upcoming summary::before{content:"\25B8\00a0";font-size:9px;}
+  .upcoming[open] summary::before{content:"\25BE\00a0";}
+  .upcoming ul{margin:4px 0 0;padding:0 0 0 15px;}
+  .upcoming li{margin:1px 0;}
+
+  /* ---------- grid shell ---------- */
+
+  .board{
+    display:grid;
+    grid-template-columns:var(--gutter) repeat(5,minmax(0,1fr));
+    border-top:1px solid var(--rule-hour);
+    border-left:1px solid var(--rule);
+  }
+
+  .head{
+    padding:8px 6px 7px;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    text-align:center;
+    border-right:1px solid var(--rule);
+    border-bottom:1px solid var(--rule-hour);
+  }
+
+  .head .d-short{display:none;}
+
+  .head .date{
+    display:block;
+    margin-top:2px;
+    font-size:9.5px;
+    font-weight:400;
+    letter-spacing:.04em;
+    text-transform:none;
+    color:var(--muted);
+    font-variant-numeric:tabular-lining-nums;
+  }
+
+  .head.today{box-shadow:inset 0 -2px 0 var(--ink);}
+  .head.today .date{color:var(--ink);}
+
+  /* ---------- time gutter ---------- */
+
+  .gutter{
+    position:relative;
+    height:calc(var(--span) * var(--min));
+    border-right:1px solid var(--rule);
+  }
+
+  .tick{
+    position:absolute;
+    right:8px;
+    top:calc(var(--at) * var(--min));
+    transform:translateY(-50%);
+    font-size:10px;
+    font-variant-numeric:tabular-lining-nums;
+    color:var(--muted);
+    letter-spacing:.03em;
+    white-space:nowrap;
+  }
+
+  .tick .t-short{display:none;}
+
+  /* ---------- day columns ---------- */
+
+  .day{
+    position:relative;
+    height:calc(var(--span) * var(--min));
+    border-right:1px solid var(--rule);
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        var(--rule) 0 1px,
+        transparent 1px calc(60 * var(--min))
+      );
+    background-position:0 calc(var(--gridoff) * var(--min));
+  }
+
+  .nowline{
+    position:absolute;
+    left:0;
+    right:0;
+    top:calc(var(--at) * var(--min));
+    height:0;
+    border-top:1px solid rgba(17,18,20,.42);
+    pointer-events:none;
+    z-index:3;
+  }
+  .nowline::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:-3px;
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:var(--ink);
+  }
+
+  /* ---------- blocks ---------- */
+
+  .block{
+    position:absolute;
+    left:3px;
+    right:3px;
+    top:calc(var(--start) * var(--min));
+    height:calc(var(--dur) * var(--min) - 2px);
+    background:var(--ca);
+    color:#fff;
+    border-radius:2px;
+    padding:6px 8px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+    overflow:hidden;
+    overflow-wrap:break-word;
+  }
+
+  .block.ta{background:var(--ta);}
+  .block.prof{background:var(--prof);}
+
+  /* side-by-side halves for overlapping hours */
+  .block.left{right:calc(50% + 2px);}
+  .block.right{left:calc(50% + 2px);}
+  .block.left,.block.right,.block.narrow{padding:4px 6px;gap:1px;}
+  .block.left .who,.block.right .who,.block.narrow .who{font-size:10px;line-height:1.1;}
+  .block.left .when,.block.right .when,.block.narrow .when{font-size:8.5px;}
+  .block.left .where,.block.right .where,.block.narrow .where{font-size:8px;}
+  .block.left .flag,.block.right .flag,.block.narrow .flag{font-size:8px;}
+
+  .who{
+    font-size:12px;
+    font-weight:600;
+    line-height:1.15;
+    letter-spacing:.01em;
+  }
+
+  .when{
+    font-size:10px;
+    line-height:1.15;
+    color:rgba(255,255,255,.8);
+    font-variant-numeric:tabular-lining-nums;
+    letter-spacing:.02em;
+  }
+
+  .where{
+    font-size:9.5px;
+    line-height:1.15;
+    color:rgba(255,255,255,.65);
+    letter-spacing:.04em;
+    text-transform:uppercase;
+  }
+
+  .flag{
+    font-size:9px;
+    line-height:1.2;
+    color:#fff;
+    letter-spacing:.02em;
+    margin-top:1px;
+  }
+
+  /* ---------- exception states ---------- */
+
+  /* in a half-width block the note is dropped — the banner still carries it */
+  .block.left .flag-note,
+  .block.right .flag-note,
+  .block.narrow .flag-note{display:none;}
+
+  /* in a half-width block the change matters more than the room name */
+  .block.left.has-flag .where,
+  .block.right.has-flag .where,
+  .block.narrow.has-flag .where{display:none;}
+
+  .block.is-cancelled{opacity:.4;}
+  .block.is-cancelled .who,
+  .block.is-cancelled .when,
+  .block.is-moved .who,
+  .block.is-moved .when{
+    text-decoration:line-through;
+    text-decoration-thickness:1px;
+  }
+  .block.short .where{display:none;}
+
+  /* ---------- self-test overlay (undocumented; press T) ---------- */
+
+  #selftest{
+    position:fixed;
+    inset:0;
+    background:#fff;
+    z-index:99;
+    overflow:auto;
+    padding:24px 28px 40px;
+    font:12px/1.5 "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    color:var(--ink);
+  }
+  #selftest[hidden]{display:none;}
+  #selftest .st-head{font-size:14px;margin-bottom:2px;}
+  #selftest .st-hint{color:var(--muted);margin-bottom:14px;}
+  #selftest .t{padding:2px 0;border-bottom:1px solid #F2F2F2;}
+  #selftest .t .mark{display:inline-block;width:54px;font-weight:600;}
+  #selftest .pass .mark{color:#1E5A46;}
+  #selftest .fail{background:#FDF2F3;}
+  #selftest .fail .mark{color:#8A1220;}
+  #selftest .d{color:var(--muted);margin-left:54px;}
+  .bad{color:#8A1220;}
+  .good{color:#1E5A46;}
+
+  .fallback{
+    display:block;
+    margin:0 0 16px;
+    padding:12px 14px;
+    border:1px solid var(--rule);
+    border-radius:3px;
+    font-size:12px;
+    line-height:1.6;
+  }
+
+  /* ---------- print ---------- */
+
+  @page{size:A4 landscape;margin:10mm;}
+
+  @media print{
+    :root{--min:1.0px;--gutter:60px;}
+    .sheet{padding:0;max-width:none;}
+    .block,.day,.board,.swatch{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    h1{font-size:16px;}
+    .sub{margin-bottom:9px;}
+    .legend{margin-bottom:9px;}
+    .banner{border-bottom:none;padding-bottom:5px;margin-bottom:7px;line-height:1.4;}
+    /* a printed sheet is about this week — the meta line and later weeks go */
+    .banner .meta,.upcoming,.nowline,#selftest{display:none !important;}
+  }
+
+  @media (max-width:720px){
+    :root{--min:1.45px;--gutter:42px;}
+    .sheet{padding:20px 10px 28px;}
+    h1{font-size:16px;}
+    .head .d-long{display:none;}
+    .head .d-short{display:inline;}
+    .who{font-size:10px;}
+    .when{font-size:9px;}
+    .where{font-size:8px;}
+    .flag{font-size:8px;}
+    .head{font-size:9px;letter-spacing:.05em;padding:8px 2px;}
+    .head .date{font-size:8.5px;}
+    .block{padding:4px 5px;}
+    .banner .meta{margin-left:0;}
+  }
+
+  @media (max-width:430px){
+    :root{--gutter:36px;}
+    .block{padding:3px 4px;}
+    .who{font-size:9.5px;letter-spacing:0;}
+    .when{font-size:8.5px;}
+    .tick{font-size:9px;right:5px;}
+    .tick .t-long{display:none;}
+    .tick .t-short{display:inline;}
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <h1>70-110 Business Computing — Office Hours</h1>
+  <p class="sub">Every week, Sunday to Thursday</p>
+
+  <div class="legend">
+    <span class="key"><span class="swatch ca"></span>Course Assistants · ARC</span>
+    <span class="key"><span class="swatch ta"></span>Aicha (TA) · Office 2145</span>
+    <span class="key"><span class="swatch prof"></span>Instructor · Office 2144</span>
+  </div>
+
+  <noscript>
+    <p class="fallback">This page uses JavaScript to draw the grid and to pick up this week's changes.
+    Office hours run Sunday to Thursday in the ARC, Office 2144 and Office 2145 — turn JavaScript on,
+    or ask a course assistant for the printed schedule.</p>
+  </noscript>
+
+  <div class="banner" id="banner" aria-live="polite"></div>
+
+  <div class="board" id="board"></div>
+
+</div>
+
+<div id="selftest" hidden></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   70-110 Business Computing — live office hours
+   One file. No build step, no frameworks, no external assets.
+
+   • To change the weekly schedule ....... edit BASE_SCHEDULE (section 2)
+   • To connect the CA exceptions sheet .. paste the CSV link into
+                                           CONFIG.SHEET_CSV_URL (section 1)
+   • To check nothing is broken .......... open the page and press T
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+(function (global) {
+'use strict';
+
+/* ─── 1. CONFIG ─────────────────────────────────────────────────────────── */
+
+var CONFIG = {
+
+  /*  ▼▼▼  PASTE THE PUBLISHED CSV LINK BETWEEN THESE QUOTES  ▼▼▼
+      (Google Sheets ▸ File ▸ Share ▸ Publish to web ▸ .csv)
+      Left empty, the page just shows the schedule below — it never breaks.  */
+
+  SHEET_CSV_URL: "",
+
+  /*  ▲▲▲  nothing else needs to change  ▲▲▲  */
+
+  TIMEZONE:         "Asia/Qatar",
+  DAY_START:        "08:30",     // top of the grid
+  DAY_END:          "17:00",     // bottom of the grid
+  FETCH_TIMEOUT_MS: 8000,
+  REFETCH_AFTER_MS: 120000,      // re-check the sheet if the tab is left open
+  SHOW_NOW_LINE:    true         // hairline marking the current time on today
+};
+
+/* ─── 2. THE SCHEDULE (authoritative) ───────────────────────────────────── */
+
+/*  Who runs office hours, where, and in which colour.
+    role: "ca" = maroon, "ta" = navy, "prof" = green.                        */
+
+var ROSTER = [
+  { name: "Darya",        role: "ca",   where: "ARC"         },
+  { name: "Abdullah",     role: "ca",   where: "ARC"         },
+  { name: "Joy",          role: "ca",   where: "ARC"         },
+  { name: "Abdul Hassib", role: "ca",   where: "ARC"         },
+  { name: "Oselumese",    role: "ca",   where: "ARC"         },
+  { name: "Aicha",        role: "ta",   where: "Office 2145" },
+  { name: "Instructor",   role: "prof", where: "Office 2144" }
+];
+
+/*  day: 0 = Sunday, 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday
+    Times are 24-hour. Add, remove or edit lines freely — the grid redraws.  */
+
+var BASE_SCHEDULE = [
+  /* Sunday    */
+  { day: 0, person: "Darya",        start: "10:00", end: "11:30" },
+  { day: 0, person: "Instructor",   start: "14:30", end: "15:45" },
+  { day: 0, person: "Joy",          start: "16:00", end: "17:00" },
+  /* Monday    */
+  { day: 1, person: "Abdullah",     start: "10:00", end: "11:00" },
+  { day: 1, person: "Aicha",        start: "15:00", end: "16:00" },
+  { day: 1, person: "Abdul Hassib", start: "15:30", end: "16:30" },
+  /* Tuesday   */
+  { day: 2, person: "Darya",        start: "10:00", end: "11:30" },
+  { day: 2, person: "Instructor",   start: "14:30", end: "15:45" },
+  { day: 2, person: "Joy",          start: "16:00", end: "17:00" },
+  /* Wednesday */
+  { day: 3, person: "Abdullah",     start: "10:00", end: "11:00" },
+  { day: 3, person: "Aicha",        start: "15:00", end: "16:00" },
+  { day: 3, person: "Abdul Hassib", start: "15:30", end: "16:30" },
+  /* Thursday  */
+  { day: 4, person: "Oselumese",    start: "10:00", end: "11:00" },
+  { day: 4, person: "Oselumese",    start: "15:30", end: "16:30" }
+];
+
+var DAY_LONG  = ["Sunday","Monday","Tuesday","Wednesday","Thursday"];
+var DAY_SHORT = ["Sun","Mon","Tue","Wed","Thu"];
+var MONTHS    = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var DAY_MS    = 86400000;
+
+/* ─── 3. Small utilities ────────────────────────────────────────────────── */
+
+function logMsg(level, msg) {
+  if (typeof console === 'undefined') return;
+  var fn = (level === 'error' && console.error) ? console.error
+         : (level === 'warn'  && console.warn)  ? console.warn
+         : console.log;
+  fn.call(console, '[office-hours] ' + msg);
+}
+
+/* "10:00" | "9:30" | "3:30 pm" | "10" -> minutes after midnight, or null */
+function hm(value) {
+  if (value === null || value === undefined) return null;
+  var s = String(value).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!s) return null;
+  var m = s.match(/^(\d{1,2})(?:[:.](\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?$/);
+  if (!m) return null;
+  var h = parseInt(m[1], 10);
+  var mins = m[2] ? parseInt(m[2], 10) : 0;
+  if (mins > 59) return null;
+  var mer = m[3] ? m[3].charAt(0) : null;
+  if (mer) {
+    if (h < 1 || h > 12) return null;
+    if (mer === 'a') { h = (h === 12) ? 0 : h; }
+    else             { h = (h === 12) ? 12 : h + 12; }
+  } else if (h > 23) return null;
+  return h * 60 + mins;
+}
+
+/*  A CA who types "3:30" for a 15:30 session should still be understood.
+    Returns every reading of the text that could be meant, or null.         */
+function timeCandidates(value) {
+  var base = hm(value);
+  if (base === null) return null;
+  var out = [base];
+  if (!/[ap]\.?m/i.test(String(value)) && base < 8 * 60) out.push(base + 720);
+  return out;
+}
+
+function t12(mins) {
+  var h = Math.floor(mins / 60) % 24, m = mins % 60;
+  var hh = (h % 12 === 0) ? 12 : h % 12;
+  return hh + ':' + String(m).padStart(2, '0');
+}
+function t12ap(mins) {
+  var h = Math.floor(mins / 60) % 24;
+  return t12(mins) + (h < 12 ? ' AM' : ' PM');
+}
+function timeSpan(a, b) { return t12(a) + ' – ' + t12(b); }
+
+/*  Turn whatever a CA typed for new_time into house style where we can,
+    and hand it back untouched where we cannot.                             */
+function prettyRange(value) {
+  if (value === null || value === undefined) return '';
+  var s = String(value).trim().replace(/\s+/g, ' ');
+  if (!s) return '';
+  var parts = s.split(/\s*[–—-]\s*|\s+(?:to|until|till)\s+/i).filter(function (p) { return p !== ''; });
+  if (parts.length === 2) {
+    var a = resolveTime(parts[0]), b = resolveTime(parts[1]);
+    if (a !== null && b !== null) return timeSpan(a, b);
+  }
+  var one = resolveTime(s);
+  return (one !== null) ? t12(one) : s;
+}
+
+/* pick the reading of a time that lands inside the drawn day, if any */
+function resolveTime(value) {
+  var c = timeCandidates(value);
+  if (!c) return null;
+  for (var i = 0; i < c.length; i++) {
+    if (c[i] >= DAY_START_MIN && c[i] <= DAY_END_MIN) return c[i];
+  }
+  return c[0];
+}
+
+function validYMD(value) {
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
+  var s = String(value).trim();
+  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  var y = +m[1], mo = +m[2], d = +m[3];
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  var dt = new Date(Date.UTC(y, mo - 1, d));
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null;
+  return s;
+}
+
+function ymdToMs(ymd)  { return Date.UTC(+ymd.slice(0, 4), +ymd.slice(5, 7) - 1, +ymd.slice(8, 10)); }
+function msToYMD(ms)   { var d = new Date(ms);
+                         return d.getUTCFullYear() + '-' +
+                                String(d.getUTCMonth() + 1).padStart(2, '0') + '-' +
+                                String(d.getUTCDate()).padStart(2, '0'); }
+function dowOf(ymd)    { return new Date(ymdToMs(ymd)).getUTCDay(); }        /* 0 = Sunday */
+function dateLabel(ymd){ var d = new Date(ymdToMs(ymd));
+                         return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()]; }
+function fullLabel(ymd){ var dw = dowOf(ymd);
+                         return (dw < 5 ? DAY_SHORT[dw] : ['Fri','Sat'][dw - 5]) + ' ' + dateLabel(ymd); }
+
+var DAY_START_MIN = hm(CONFIG.DAY_START);
+var DAY_END_MIN   = hm(CONFIG.DAY_END);
+
+/* ─── 4. The week (Sunday → Thursday, Asia/Qatar) ───────────────────────── */
+
+function tzParts(ms, tz) {
+  try {
+    var parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(new Date(ms));
+    var o = {};
+    parts.forEach(function (p) { o[p.type] = p.value; });
+    if (o.year && o.month && o.day) return { y: +o.year, m: +o.month, d: +o.day };
+  } catch (e) {
+    logMsg('warn', 'Time zone "' + tz + '" unavailable, falling back to this device’s clock.');
+  }
+  var local = new Date(ms);
+  return { y: local.getFullYear(), m: local.getMonth() + 1, d: local.getDate() };
+}
+
+/*  Friday and Saturday belong to no teaching week, so on those two days the
+    page rolls forward and shows the week that is about to start.            */
+function currentWeek(nowMs, tz) {
+  var p = tzParts(nowMs, tz || CONFIG.TIMEZONE);
+  var todayMs = Date.UTC(p.y, p.m - 1, p.d);
+  var dow = new Date(todayMs).getUTCDay();
+  var shift = (dow === 5) ? 2 : (dow === 6) ? 1 : -dow;
+  var startMs = todayMs + shift * DAY_MS;
+  var days = [];
+  for (var i = 0; i < 5; i++) days.push(msToYMD(startMs + i * DAY_MS));
+  return {
+    days:     days,
+    start:    days[0],
+    end:      days[4],
+    today:    msToYMD(todayMs),
+    todayDow: dow,
+    nowMin:   null   /* filled in by the renderer */
+  };
+}
+
+/* ─── 5. CSV ────────────────────────────────────────────────────────────── */
+
+/*  Deliberately forgiving: quoted fields, doubled quotes, embedded commas
+    and newlines, CRLF or LF or CR, a byte-order mark, blank lines.          */
+function parseCSV(text) {
+  var rows = [];
+  if (text === null || text === undefined) return rows;
+  var s = String(text);
+  if (s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
+
+  var row = [], field = '', quoted = false, i = 0;
+
+  function endField() { row.push(field); field = ''; }
+  function endRow() {
+    endField();
+    var blank = row.every(function (c) { return String(c).trim() === ''; });
+    if (!blank) rows.push(row);
+    row = [];
+  }
+
+  while (i < s.length) {
+    var c = s.charAt(i);
+    if (quoted) {
+      if (c === '"') {
+        if (s.charAt(i + 1) === '"') { field += '"'; i += 2; continue; }
+        quoted = false; i++; continue;
+      }
+      field += c; i++; continue;
+    }
+    if (c === '"')  { quoted = true; i++; continue; }
+    if (c === ',')  { endField(); i++; continue; }
+    if (c === '\r') { if (s.charAt(i + 1) === '\n') i++; endRow(); i++; continue; }
+    if (c === '\n') { endRow(); i++; continue; }
+    field += c; i++;
+  }
+  if (field !== '' || row.length) endRow();
+  return rows;
+}
+
+var FIELD_ALIASES = {
+  date: 'date', day: 'date', dates: 'date',
+  person: 'person', name: 'person', ca: 'person', who: 'person', staff: 'person',
+  status: 'status', change: 'status', type: 'status', what: 'status',
+  time: 'time', start: 'time', starttime: 'time', sessiontime: 'time',
+  originaltime: 'time', usualtime: 'time',
+  newtime: 'new_time', movedto: 'new_time', newtimes: 'new_time', endtime: 'new_time',
+  note: 'note', notes: 'note', reason: 'note', comment: 'note',
+  comments: 'note', message: 'note'
+};
+var COLUMN_ORDER = ['date', 'person', 'status', 'time', 'new_time', 'note'];
+
+function normKey(h) { return String(h === null || h === undefined ? '' : h).toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+function toRecords(rows, log) {
+  log = log || function () {};
+  var out = [];
+  if (!rows || !rows.length) return out;
+
+  var first = rows[0].map(normKey);
+  var looksLikeHeader =
+        first.some(function (h) { return FIELD_ALIASES[h] === 'date';   }) &&
+        first.some(function (h) { return FIELD_ALIASES[h] === 'person'; });
+
+  var map, startAt;
+  if (looksLikeHeader) {
+    map = first.map(function (h) { return FIELD_ALIASES[h] || null; });
+    startAt = 1;
+  } else {
+    map = COLUMN_ORDER.slice();
+    startAt = 0;
+    log('warn', 'No header row recognised — reading the columns in order: ' + COLUMN_ORDER.join(', ') + '.');
+  }
+
+  for (var r = startAt; r < rows.length; r++) {
+    var rec = { date: '', person: '', status: '', time: '', new_time: '', note: '', row: r + 1 };
+    for (var c = 0; c < rows[r].length; c++) {
+      var key = map[c];
+      if (key && rec[key] === '') rec[key] = String(rows[r][c]).trim();
+    }
+    out.push(rec);
+  }
+  return out;
+}
+
+/* ─── 6. Validating a row against the roster ────────────────────────────── */
+
+function normName(v) { return String(v === null || v === undefined ? '' : v)
+                              .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+
+function findPerson(raw) {
+  var want = normName(raw);
+  if (!want) return { error: 'no name given' };
+  var exact = ROSTER.filter(function (p) { return normName(p.name) === want; });
+  if (exact.length === 1) return { person: exact[0] };
+
+  var starts = ROSTER.filter(function (p) { return normName(p.name).indexOf(want) === 0; });
+  if (starts.length === 1) return { person: starts[0] };
+  if (starts.length > 1) {
+    return { error: '"' + String(raw).trim() + '" could mean ' +
+                    starts.map(function (p) { return p.name; }).join(' or ') + ' — write the full name' };
+  }
+  return { error: '"' + String(raw).trim() + '" is not a name on the schedule' };
+}
+
+var STATUS_ALIASES = {
+  cancelled: 'cancelled', canceled: 'cancelled', cancel: 'cancelled',
+  cancelledtoday: 'cancelled', off: 'cancelled', nothappening: 'cancelled',
+  moved: 'moved', move: 'moved', movedto: 'moved', rescheduled: 'moved',
+  reschedule: 'moved', changed: 'moved', newtime: 'moved',
+  extra: 'extra', added: 'extra', add: 'extra', additional: 'extra', bonus: 'extra'
+};
+function normStatus(v) { return STATUS_ALIASES[normKey(v)] || null; }
+
+/*  Splits the sheet into rows that matter this week, rows for a later week,
+    and rows that go in the bin (with a reason on the console).              */
+function validate(records, week, log) {
+  log = log || function () {};
+  var thisWeek = [], upcoming = [], skipped = 0;
+
+  (Array.isArray(records) ? records : []).forEach(function (rec) {
+    function drop(why) { skipped++; log('warn', 'Row ' + rec.row + ' skipped — ' + why + '.'); }
+
+    var ymd = validYMD(rec.date);
+    if (!ymd) return drop('"' + rec.date + '" is not a date written as YYYY-MM-DD');
+
+    var found = findPerson(rec.person);
+    if (!found.person) return drop(found.error);
+
+    var status = normStatus(rec.status);
+    if (!status) return drop('"' + rec.status + '" is not one of cancelled, moved, extra');
+
+    var dw = dowOf(ymd);
+    if (dw === 5 || dw === 6) return drop(ymd + ' is a Friday/Saturday — there are no office hours then');
+
+    var item = {
+      ymd: ymd, dow: dw, person: found.person, status: status,
+      time: rec.time, new_time: rec.new_time, note: rec.note, row: rec.row
+    };
+
+    if (ymd < week.start) { log('log', 'Row ' + rec.row + ' is in the past (' + ymd + ') — ignored.'); return; }
+    if (ymd > week.end)   { upcoming.push(item); return; }
+    thisWeek.push(item);
+  });
+
+  return { thisWeek: thisWeek, upcoming: upcoming, skipped: skipped };
+}
+
+/* ─── 7. This week's grid, before and after the sheet ───────────────────── */
+
+function buildWeek(week) {
+  var days = week.days.map(function (ymd, idx) {
+    return { ymd: ymd, index: idx, name: DAY_LONG[idx], short: DAY_SHORT[idx], date: dateLabel(ymd), sessions: [] };
+  });
+
+  BASE_SCHEDULE.forEach(function (row, n) {
+    var person = ROSTER.filter(function (p) { return p.name === row.person; })[0];
+    if (!person) { logMsg('warn', 'BASE_SCHEDULE line ' + (n + 1) + ': "' + row.person + '" is not in ROSTER — skipped.'); return; }
+    var start = hm(row.start), end = hm(row.end);
+    if (start === null || end === null || end <= start) {
+      logMsg('warn', 'BASE_SCHEDULE line ' + (n + 1) + ': "' + row.start + '"–"' + row.end + '" is not a usable time range — skipped.');
+      return;
+    }
+    if (row.day < 0 || row.day > 4) { logMsg('warn', 'BASE_SCHEDULE line ' + (n + 1) + ': day must be 0–4 — skipped.'); return; }
+    days[row.day].sessions.push({
+      person: person, where: row.where || person.where,
+      start: start, end: end, state: null, flag: '', added: false
+    });
+  });
+
+  return { week: week, days: days };
+}
+
+function applyExceptions(model, items, log) {
+  log = log || function () {};
+  var changes = [], notices = [];
+
+  (Array.isArray(items) ? items.slice() : []).sort(function (a, b) {
+    return a.ymd < b.ymd ? -1 : a.ymd > b.ymd ? 1 : a.row - b.row;
+  }).forEach(function (it) {
+
+    if (!it || typeof it !== 'object' || !it.person) return;
+
+    var day = null;
+    for (var i = 0; i < model.days.length; i++) if (model.days[i].ymd === it.ymd) day = model.days[i];
+    if (!day) return;
+
+    var note = (it.note || '').trim();
+    var tail = note ? ' — ' + note : '';
+    var head = day.short + ' — ' + it.person.name + ' ';
+
+    /* ---- extra: a session that is not on the base schedule ---- */
+    if (it.status === 'extra') {
+      var s = resolveTime(it.time);
+      if (s === null) {
+        log('warn', 'Row ' + it.row + ' skipped — an extra session needs a start time in the time column.');
+        return;
+      }
+      var e = resolveTime(it.new_time);
+      if (e === null || e <= s) {
+        if (it.new_time) log('warn', 'Row ' + it.row + ': could not read "' + it.new_time + '" as an end time — assuming one hour.');
+        e = s + 60;
+      }
+      changes.push(head + 'extra session ' + timeSpan(s, e) + tail);
+
+      if (e <= DAY_START_MIN || s >= DAY_END_MIN) {
+        log('log', 'Row ' + it.row + ': ' + timeSpan(s, e) + ' falls outside the hours drawn on the grid — listed in the banner only.');
+        return;
+      }
+      day.sessions.push({
+        person: it.person, where: it.person.where,
+        start: Math.max(s, DAY_START_MIN), end: Math.min(e, DAY_END_MIN),
+        trueStart: s, trueEnd: e,
+        state: 'extra', flag: 'Added' + tail, flagMain: 'Added', flagNote: note, added: true
+      });
+      return;
+    }
+
+    /* ---- cancelled / moved: they point at a session already on the grid ---- */
+    var mine = day.sessions.filter(function (x) { return !x.added && x.person.name === it.person.name; });
+    if (!mine.length) {
+      log('warn', 'Row ' + it.row + ' skipped — ' + it.person.name + ' has no session on ' + day.name + ' ' + day.date + '.');
+      return;
+    }
+
+    var target = null;
+    var cands = it.time ? timeCandidates(it.time) : null;
+    if (it.time && !cands) log('warn', 'Row ' + it.row + ': "' + it.time + '" is not a time I can read.');
+
+    var hits = cands ? mine.filter(function (x) { return cands.indexOf(x.start) >= 0; }) : mine;
+
+    if (hits.length === 1) {
+      target = hits[0];
+    } else if (mine.length === 1) {
+      target = mine[0];
+      if (cands) log('log', 'Row ' + it.row + ': "' + it.time + '" does not match ' + t12(mine[0].start) +
+                            ', but it is the only session ' + it.person.name + ' has that day — applied to it.');
+    } else {
+      notices.push(day.short + ' — ' + it.person.name + ': a change was reported but it does not say which session' +
+                   (note ? ' (' + note + ')' : '') + '. Check with the CA.');
+      log('warn', 'Row ' + it.row + ' applied to nothing — ' + it.person.name + ' has ' + mine.length +
+                  ' sessions on ' + day.name + ' and the time column does not single one out.');
+      return;
+    }
+
+    target.flagNote = note;
+
+    if (it.status === 'cancelled') {
+      target.state    = 'cancelled';
+      target.flagMain = 'Cancelled';
+      target.flag     = 'Cancelled' + tail;
+      changes.push(head + t12(target.start) + ' cancelled' + (note ? ' (' + note + ')' : ''));
+    } else {
+      var moved = prettyRange(it.new_time);
+      target.state    = 'moved';
+      target.flagMain = moved ? 'Moved to ' + moved : 'Moved';
+      target.flag     = target.flagMain + tail;
+      changes.push(head + t12(target.start) + (moved ? ' moved to ' + moved : ' moved') + (note ? ' (' + note + ')' : ''));
+    }
+  });
+
+  return { changes: changes, notices: notices };
+}
+
+/*  Side-by-side lanes for sessions that overlap, exactly as the printed
+    schedule does for Monday and Wednesday afternoons.                       */
+function layout(sessions) {
+  var list = sessions.slice().sort(function (a, b) { return (a.start - b.start) || (a.end - b.end); });
+  var cluster = [], clusterEnd = -1;
+
+  function flush() {
+    if (!cluster.length) return;
+    var laneEnds = [];
+    cluster.forEach(function (s) {
+      var i = 0;
+      while (i < laneEnds.length && laneEnds[i] > s.start) i++;
+      s.lane = i;
+      laneEnds[i] = s.end;
+    });
+    cluster.forEach(function (s) { s.lanes = laneEnds.length; });
+    cluster = []; clusterEnd = -1;
+  }
+
+  list.forEach(function (s) {
+    if (cluster.length && s.start >= clusterEnd) flush();
+    cluster.push(s);
+    clusterEnd = (cluster.length === 1) ? s.end : Math.max(clusterEnd, s.end);
+  });
+  flush();
+  return list;
+}
+
+/* ─── 8. Drawing ────────────────────────────────────────────────────────── */
+
+function el(tag, cls, text) {
+  var n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== null && text !== undefined) n.textContent = text;   /* text, never HTML */
+  return n;
+}
+
+function gutterTicks() {
+  var out = [{ at: 0, label: t12ap(DAY_START_MIN), short: t12(DAY_START_MIN) }];
+  var m = Math.ceil(DAY_START_MIN / 60) * 60;
+  if (m === DAY_START_MIN) m += 60;
+  for (; m <= DAY_END_MIN; m += 60) out.push({ at: m - DAY_START_MIN, label: t12ap(m), short: t12(m) });
+  return out;
+}
+
+function blockEl(s) {
+  var role = s.person.role;
+  var n = el('div', 'block' + (role === 'ta' ? ' ta' : role === 'prof' ? ' prof' : ''));
+  var lanes = s.lanes || 1;
+
+  if (lanes === 2) {
+    n.classList.add(s.lane === 0 ? 'left' : 'right');
+  } else if (lanes > 2) {
+    n.classList.add('narrow');
+    n.style.left  = 'calc(3px + (100% - 6px) * ' + (s.lane / lanes) + ' + ' + (s.lane ? 1 : 0) + 'px)';
+    n.style.right = 'calc(3px + (100% - 6px) * ' + ((lanes - 1 - s.lane) / lanes) + ' + ' + (s.lane < lanes - 1 ? 1 : 0) + 'px)';
+  }
+  if (s.state === 'cancelled') n.classList.add('is-cancelled');
+  if (s.state === 'moved')     n.classList.add('is-moved');
+  if (s.end - s.start < 50)    n.classList.add('short');
+  if (s.flag)                  n.classList.add('has-flag');
+
+  n.style.setProperty('--start', s.start - DAY_START_MIN);
+  n.style.setProperty('--dur', s.end - s.start);
+
+  n.appendChild(el('span', 'who', s.person.name));
+  n.appendChild(el('span', 'when', timeSpan(
+    s.trueStart !== undefined ? s.trueStart : s.start,
+    s.trueEnd   !== undefined ? s.trueEnd   : s.end)));
+  n.appendChild(el('span', 'where', s.where));
+
+  if (s.flag) {
+    var f = el('span', 'flag');
+    f.appendChild(el('span', 'flag-main', s.flagMain || s.flag));
+    if (s.flagNote) f.appendChild(el('span', 'flag-note', ' — ' + s.flagNote));
+    n.appendChild(f);
+  }
+  return n;
+}
+
+function renderBoard(model, nowMin) {
+  var board = document.getElementById('board');
+  if (!board) return;
+  var frag = document.createDocumentFragment();
+
+  frag.appendChild(el('div', 'head'));
+  model.days.forEach(function (d) {
+    var h = el('div', 'head' + (d.ymd === model.week.today ? ' today' : ''));
+    h.appendChild(el('span', 'd-long', d.name));    /* Sunday  — wide screens */
+    h.appendChild(el('span', 'd-short', d.short));  /* Sun     — phones       */
+    h.appendChild(el('span', 'date', d.date));
+    frag.appendChild(h);
+  });
+
+  var g = el('div', 'gutter');
+  gutterTicks().forEach(function (tk) {
+    var n = el('div', 'tick');
+    n.appendChild(el('span', 't-long', tk.label));    /* 10:00 AM — wide screens */
+    n.appendChild(el('span', 't-short', tk.short));   /* 10:00    — small phones  */
+    n.style.setProperty('--at', tk.at);
+    g.appendChild(n);
+  });
+  frag.appendChild(g);
+
+  model.days.forEach(function (d) {
+    var col = el('div', 'day');
+    layout(d.sessions).forEach(function (s) { col.appendChild(blockEl(s)); });
+    if (CONFIG.SHOW_NOW_LINE && nowMin !== null && d.ymd === model.week.today &&
+        nowMin >= DAY_START_MIN && nowMin <= DAY_END_MIN) {
+      var line = el('div', 'nowline');
+      line.style.setProperty('--at', nowMin - DAY_START_MIN);
+      col.appendChild(line);
+    }
+    frag.appendChild(col);
+  });
+
+  board.textContent = '';
+  board.appendChild(frag);
+}
+
+/*  Shrink one minute until the whole grid clears the bottom of the window.
+    Written to --min-fit, not --min, so the print rule still wins on paper.  */
+function fitToScreen() {
+  var root = document.documentElement;
+  root.style.removeProperty('--min-fit');
+  if (typeof window === 'undefined' || window.innerWidth <= 720) { trimBlocks(1.45); return; }
+
+  var board = document.getElementById('board');
+  var head  = board && board.querySelector('.head');
+  if (!board || !head) return;
+
+  var top   = board.getBoundingClientRect().top + (window.pageYOffset || 0);
+  /* 24px of page padding below the grid, plus the board's own hairline border */
+  var avail = window.innerHeight - top - head.getBoundingClientRect().height - 28;
+  var per   = avail / (DAY_END_MIN - DAY_START_MIN);
+  if (!isFinite(per) || per <= 0) { trimBlocks(1.24); return; }
+
+  per = Math.max(0.95, Math.min(1.7, per));
+  root.style.setProperty('--min-fit', per.toFixed(3) + 'px');
+  trimBlocks(per);
+}
+
+/*  A block only has room for the room name if the session is long enough at
+    the scale being drawn; below that the name is dropped, not squashed.     */
+function trimBlocks(perMinute) {
+  var nodes = document.querySelectorAll('#board .block');
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    var dur = parseFloat(n.style.getPropertyValue('--dur'));
+    if (!isFinite(dur)) continue;
+    var needed = n.classList.contains('has-flag') ? 74 : 56;
+    if (dur * perMinute < needed) n.classList.add('short');
+    else n.classList.remove('short');
+  }
+}
+
+function renderBanner(state) {
+  var b = document.getElementById('banner');
+  if (!b) return;
+  b.textContent = '';
+
+  var row = el('div', 'row');
+  var head = el('div', 'headline');
+
+  if (state.mode === 'offline') {
+    head.appendChild(el('span', 'quiet', 'Live updates unavailable — schedule shown is the default.'));
+  } else if (state.mode === 'loading') {
+    head.appendChild(el('span', 'quiet', 'Checking for changes…'));
+  } else if (!state.changes.length) {
+    head.appendChild(el('span', 'ok', 'No changes this week ✓'));
+  } else {
+    head.appendChild(el('span', 'label', 'Changes this week: '));
+    state.changes.forEach(function (c, i) {
+      if (i) head.appendChild(el('span', 'sep', '·'));
+      head.appendChild(el('span', 'chg', c));
+    });
+  }
+  row.appendChild(head);
+  if (state.mode === 'live') row.appendChild(el('span', 'meta', 'Live · updated ' + state.updated));
+  b.appendChild(row);
+
+  (state.notices || []).forEach(function (n) { b.appendChild(el('div', 'notice', n)); });
+
+  if (state.upcoming && state.upcoming.length) {
+    var d = el('details', 'upcoming');
+    d.appendChild(el('summary', null,
+      state.upcoming.length + (state.upcoming.length === 1 ? ' change' : ' changes') + ' in a later week'));
+    var ul = el('ul');
+    state.upcoming.slice(0, 12).forEach(function (u) { ul.appendChild(el('li', null, u)); });
+    if (state.upcoming.length > 12) ul.appendChild(el('li', null, '+ ' + (state.upcoming.length - 12) + ' more'));
+    d.appendChild(ul);
+    d.addEventListener('toggle', fitToScreen);
+    b.appendChild(d);
+  }
+}
+
+function describeUpcoming(it) {
+  var when = it.time ? ' ' + prettyRange(it.time) : '';
+  var extra = (it.status === 'moved' && it.new_time)   ? ' to ' + prettyRange(it.new_time)
+            : (it.status === 'extra' && it.new_time)   ? '–' + prettyRange(it.new_time)
+            : '';
+  var word = (it.status === 'extra') ? 'extra session' : it.status;
+  return fullLabel(it.ymd) + ' — ' + it.person.name + ' ' + word + when + extra +
+         (it.note ? ' (' + it.note.trim() + ')' : '');
+}
+
+/* ─── 9. Loading the sheet ──────────────────────────────────────────────── */
+
+function clockNow(nowMs) {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: CONFIG.TIMEZONE, hour: 'numeric', minute: '2-digit'
+    }).format(new Date(nowMs));
+  } catch (e) { return new Date(nowMs).toTimeString().slice(0, 5); }
+}
+
+function nowMinutes(nowMs) {
+  try {
+    var parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: CONFIG.TIMEZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(new Date(nowMs));
+    var o = {};
+    parts.forEach(function (p) { o[p.type] = p.value; });
+    if (o.hour !== undefined && o.minute !== undefined) return (+o.hour) * 60 + (+o.minute);
+  } catch (e) {}
+  var d = new Date(nowMs);
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+function fetchCSV(url) {
+  var bust = (url.indexOf('?') >= 0 ? '&' : '?') + 'cb=' + Date.now();
+  var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, CONFIG.FETCH_TIMEOUT_MS) : null;
+  var opts = { cache: 'no-store', redirect: 'follow' };
+  if (ctrl) opts.signal = ctrl.signal;
+  return fetch(url + bust, opts).then(function (r) {
+    if (timer) clearTimeout(timer);
+    if (!r.ok) throw new Error('the sheet answered HTTP ' + r.status);
+    return r.text();
+  }, function (err) {
+    if (timer) clearTimeout(timer);
+    throw err;
+  });
+}
+
+var lastFetchMs = 0;
+
+function draw(nowMs, csvText) {
+  var week  = currentWeek(nowMs, CONFIG.TIMEZONE);
+  var model = buildWeek(week);
+  var state = { mode: 'offline', changes: [], notices: [], upcoming: [], updated: clockNow(nowMs) };
+
+  if (csvText !== null && csvText !== undefined) {
+    var checked = validate(toRecords(parseCSV(csvText), logMsg), week, logMsg);
+    var result  = applyExceptions(model, checked.thisWeek, logMsg);
+    state.mode     = 'live';
+    state.changes  = result.changes;
+    state.notices  = result.notices;
+    state.upcoming = checked.upcoming.map(describeUpcoming);
+  }
+
+  renderBoard(model, nowMinutes(nowMs));
+  renderBanner(state);
+  fitToScreen();
+  return state;
+}
+
+function boot() {
+  document.documentElement.style.setProperty('--span', String(DAY_END_MIN - DAY_START_MIN));
+  document.documentElement.style.setProperty('--gridoff', String((Math.ceil(DAY_START_MIN / 60) * 60) - DAY_START_MIN || 60));
+
+  /* the base grid is painted first, so the page is never blank or late */
+  draw(Date.now(), null);
+
+  var url = String(CONFIG.SHEET_CSV_URL || '').trim();
+  if (!url) {
+    logMsg('log', 'No SHEET_CSV_URL set in CONFIG — showing the base schedule only.');
+    return;
+  }
+  refresh(true);
+}
+
+function refresh(first) {
+  var url = String(CONFIG.SHEET_CSV_URL || '').trim();
+  if (!url) return;
+  if (first) { renderBanner({ mode: 'loading', changes: [], notices: [], upcoming: [] }); fitToScreen(); }
+
+  fetchCSV(url).then(function (text) {
+    if (/^\s*<(!doctype|html)/i.test(text)) {
+      throw new Error('that link returned a web page, not CSV — re-publish the sheet as .csv');
+    }
+    lastFetchMs = Date.now();
+    draw(lastFetchMs, text);
+  }).catch(function (err) {
+    logMsg('warn', 'Could not load the changes sheet (' + (err && err.message ? err.message : err) +
+                   '). Showing the base schedule.');
+    draw(Date.now(), null);
+  });
+}
+
+/* ─── 10. Self-test — press T ───────────────────────────────────────────── */
+
+function simulate(csv, nowISO) {
+  var nowMs = Date.parse(nowISO);
+  var week  = currentWeek(nowMs, CONFIG.TIMEZONE);
+  var logs  = [];
+  var log   = function (level, msg) { logs.push(level + ': ' + msg); };
+  var checked = validate(toRecords(parseCSV(csv), log), week, log);
+  var model   = buildWeek(week);
+  var applied = applyExceptions(model, checked.thisWeek, log);
+  return {
+    week: week, model: model, logs: logs,
+    changes: applied.changes, notices: applied.notices,
+    upcoming: checked.upcoming, skipped: checked.skipped
+  };
+}
+
+function runSelfTests() {
+  var R = [];
+  function t(name, fn) {
+    try { var msg = fn(); R.push({ name: name, ok: !msg, detail: msg || '' }); }
+    catch (e) { R.push({ name: name, ok: false, detail: 'threw: ' + (e && e.message ? e.message : e) }); }
+  }
+  function need(cond, msg) { return cond ? '' : (msg || 'expected true'); }
+  function sessions(sim, dayIdx, person, start) {
+    return sim.model.days[dayIdx].sessions.filter(function (s) {
+      return s.person.name === person && (start === undefined || s.start === hm(start));
+    });
+  }
+  function logged(sim, re) { return sim.logs.some(function (l) { return re.test(l); }); }
+
+  var TUE  = '2026-09-01T09:00:00Z';   /* Tue 1 Sep 2026, noon in Qatar — week 30 Aug → 3 Sep */
+  var NEXT = '2026-09-08T09:00:00Z';   /* the week after                                      */
+  var PREV = '2026-08-25T09:00:00Z';   /* the week before                                     */
+  var HEAD = 'date,person,status,time,new_time,note\n';
+
+  t('CSV: quoted commas, doubled quotes, CRLF, blank lines', function () {
+    var rows = parseCSV('date,person,status,time,new_time,note\r\n\r\n2026-09-01,Joy,cancelled,16:00,,"Sick, back on ""Sunday"""\r\n\r\n');
+    if (rows.length !== 2) return 'expected 2 rows, got ' + rows.length;
+    return need(rows[1][5] === 'Sick, back on "Sunday"', 'note cell was ' + JSON.stringify(rows[1][5]));
+  });
+
+  t('CSV: an empty file yields nothing and does not throw', function () {
+    var sim = simulate('', TUE);
+    return need(sim.changes.length === 0 && sim.notices.length === 0 && sim.upcoming.length === 0,
+                'changes=' + sim.changes.length + ' notices=' + sim.notices.length);
+  });
+
+  t('CSV: whitespace-only file, header-only file', function () {
+    var a = simulate('   \r\n\r\n  ', TUE), b = simulate(HEAD, TUE);
+    return need(a.changes.length === 0 && b.changes.length === 0, 'a=' + a.changes.length + ' b=' + b.changes.length);
+  });
+
+  t('CSV: columns read in order when the header is missing', function () {
+    var sim = simulate('2026-09-01,Joy,cancelled,16:00,,\n', TUE);
+    return need(sessions(sim, 2, 'Joy')[0].state === 'cancelled' && logged(sim, /No header row/),
+                'state=' + sessions(sim, 2, 'Joy')[0].state);
+  });
+
+  t('Cancellation: "2026-09-01, Joy, cancelled" strikes Joy on Tuesday', function () {
+    var sim = simulate(HEAD + '2026-09-01, Joy, cancelled,,,\n', TUE);
+    var tue = sessions(sim, 2, 'Joy')[0];
+    if (!tue) return 'Joy has no Tuesday session in the model';
+    if (tue.state !== 'cancelled') return 'Tuesday state = ' + tue.state;
+    if (tue.flag !== 'Cancelled') return 'flag = ' + tue.flag;
+    return need(!sessions(sim, 0, 'Joy')[0].state, 'Sunday was changed too: ' + sessions(sim, 0, 'Joy')[0].state);
+  });
+
+  t('Cancellation applies during that week only (next week is untouched)', function () {
+    var sim = simulate(HEAD + '2026-09-01, Joy, cancelled,,,\n', NEXT);
+    return need(!sessions(sim, 2, 'Joy')[0].state && sim.changes.length === 0 && sim.upcoming.length === 0,
+                'state=' + sessions(sim, 2, 'Joy')[0].state + ' changes=' + sim.changes.length);
+  });
+
+  t('…and the week before, where it is upcoming, not applied', function () {
+    var sim = simulate(HEAD + '2026-09-01, Joy, cancelled,,,\n', PREV);
+    return need(!sessions(sim, 2, 'Joy')[0].state && sim.upcoming.length === 1 && sim.changes.length === 0,
+                'upcoming=' + sim.upcoming.length + ' state=' + sessions(sim, 2, 'Joy')[0].state);
+  });
+
+  t('Cancellation carries the note into the block and the banner', function () {
+    var sim = simulate(HEAD + '2026-09-01,Joy,cancelled,16:00,,Travelling\n', TUE);
+    var tue = sessions(sim, 2, 'Joy')[0];
+    return need(tue.flag === 'Cancelled — Travelling' && /Joy 4:00 cancelled \(Travelling\)/.test(sim.changes[0]),
+                'flag=' + tue.flag + ' | banner=' + sim.changes[0]);
+  });
+
+  t('Move: original struck, new time and note printed on it', function () {
+    var sim = simulate(HEAD + '2026-08-31,Aicha,moved,15:00,16:00-17:00,Faculty meeting\n', TUE);
+    var mon = sessions(sim, 1, 'Aicha')[0];
+    if (mon.state !== 'moved') return 'state = ' + mon.state;
+    if (mon.flag !== 'Moved to 4:00 – 5:00 — Faculty meeting') return 'flag = ' + mon.flag;
+    return need(/Mon — Aicha 3:00 moved to 4:00 – 5:00/.test(sim.changes[0]), 'banner = ' + sim.changes[0]);
+  });
+
+  t('Extra: a new block appears with the right colour and room', function () {
+    var sim = simulate(HEAD + '2026-09-02,Darya,extra,13:00,14:00,Exam review\n', TUE);
+    var added = sim.model.days[3].sessions.filter(function (s) { return s.added; });
+    if (added.length !== 1) return 'expected 1 added session on Wednesday, got ' + added.length;
+    var a = added[0];
+    return need(a.start === 780 && a.end === 840 && a.where === 'ARC' &&
+                a.person.role === 'ca' && a.flag === 'Added — Exam review',
+                JSON.stringify({ start: a.start, end: a.end, where: a.where, flag: a.flag }));
+  });
+
+  t('Extra: a missing end time falls back to one hour', function () {
+    var sim = simulate(HEAD + '2026-09-02,Instructor,extra,13:00,,\n', TUE);
+    var a = sim.model.days[3].sessions.filter(function (s) { return s.added; })[0];
+    return need(a && a.end - a.start === 60 && a.where === 'Office 2144', a ? (a.end - a.start) + 'min' : 'not added');
+  });
+
+  t('Extra outside the drawn hours is listed but never breaks the grid', function () {
+    var sim = simulate(HEAD + '2026-09-02,Joy,extra,19:00,20:00,Evening review\n', TUE);
+    var added = sim.model.days[3].sessions.filter(function (s) { return s.added; });
+    return need(added.length === 0 && sim.changes.length === 1 && /extra session 7:00 – 8:00/.test(sim.changes[0]),
+                'added=' + added.length + ' banner=' + sim.changes[0]);
+  });
+
+  t('Extra without a start time is skipped and logged', function () {
+    var sim = simulate(HEAD + '2026-09-02,Joy,extra,,,\n', TUE);
+    return need(sim.changes.length === 0 && logged(sim, /needs a start time/), sim.logs.join(' | '));
+  });
+
+  t('Malformed dates are skipped, logged, and never crash', function () {
+    var sim = simulate(HEAD +
+      '2026-13-45,Joy,cancelled,,,\n' +
+      'Sept 1,Joy,cancelled,,,\n' +
+      '01/09/2026,Joy,cancelled,,,\n' +
+      '2026-02-30,Joy,cancelled,,,\n' +
+      ',Joy,cancelled,,,\n', TUE);
+    if (sim.changes.length || sim.notices.length) return 'something was applied: ' + sim.changes.join(' | ');
+    if (sim.skipped !== 5) return 'skipped ' + sim.skipped + ' of 5';
+    return need(sim.logs.filter(function (l) { return /is not a date/.test(l); }).length === 5, sim.logs.join(' | '));
+  });
+
+  t('Ambiguous Thursday row applies to neither session', function () {
+    var sim = simulate(HEAD + '2026-09-03,Oselumese,cancelled,,,Conference\n', TUE);
+    var thu = sim.model.days[4].sessions;
+    if (thu.some(function (s) { return s.state; })) return 'a session was changed anyway';
+    if (sim.changes.length) return 'banner claimed a change: ' + sim.changes[0];
+    return need(sim.notices.length === 1 && /Check with the CA/.test(sim.notices[0]), 'notices = ' + JSON.stringify(sim.notices));
+  });
+
+  t('A time singles out the right Thursday session', function () {
+    var sim = simulate(HEAD + '2026-09-03,Oselumese,cancelled,15:30,,\n', TUE);
+    var early = sessions(sim, 4, 'Oselumese', '10:00')[0];
+    var late  = sessions(sim, 4, 'Oselumese', '15:30')[0];
+    return need(late.state === 'cancelled' && !early.state && sim.notices.length === 0,
+                'early=' + early.state + ' late=' + late.state);
+  });
+
+  t('A 12-hour time still matches (3:30 finds the 15:30 session)', function () {
+    var sim = simulate(HEAD + '2026-09-03,Oselumese,cancelled,3:30 pm,,\n' +
+                              '2026-09-01,Instructor,cancelled,2:30,,\n', TUE);
+    return need(sessions(sim, 4, 'Oselumese', '15:30')[0].state === 'cancelled' &&
+                sessions(sim, 2, 'Instructor', '14:30')[0].state === 'cancelled',
+                'thu=' + sessions(sim, 4, 'Oselumese', '15:30')[0].state +
+                ' tue=' + sessions(sim, 2, 'Instructor', '14:30')[0].state);
+  });
+
+  t('Unknown names, half names and bad statuses are skipped and logged', function () {
+    var sim = simulate(HEAD +
+      '2026-09-01,Bob,cancelled,,,\n' +
+      '2026-09-01,Abdul,cancelled,,,\n' +
+      '2026-09-01,Joy,on holiday,,,\n', TUE);
+    if (sim.changes.length || sim.notices.length) return 'something was applied';
+    return need(logged(sim, /not a name on the schedule/) &&
+                logged(sim, /could mean Abdullah or Abdul Hassib/) &&
+                logged(sim, /not one of cancelled, moved, extra/), sim.logs.join(' | '));
+  });
+
+  t('A row for a person with no session that day is skipped', function () {
+    var sim = simulate(HEAD + '2026-09-01,Abdullah,cancelled,,,\n', TUE);
+    return need(sim.changes.length === 0 && logged(sim, /has no session on Tuesday/), sim.logs.join(' | '));
+  });
+
+  t('Friday and Saturday rows are skipped', function () {
+    var sim = simulate(HEAD + '2026-09-04,Joy,cancelled,,,\n', TUE);
+    return need(sim.changes.length === 0 && logged(sim, /Friday\/Saturday/), sim.logs.join(' | '));
+  });
+
+  t('The week runs Sunday to Thursday and rolls over on Friday', function () {
+    var thu = currentWeek(Date.parse('2026-08-27T09:00:00Z'), CONFIG.TIMEZONE);
+    var fri = currentWeek(Date.parse('2026-08-28T09:00:00Z'), CONFIG.TIMEZONE);
+    var sat = currentWeek(Date.parse('2026-08-29T20:00:00Z'), CONFIG.TIMEZONE);
+    if (thu.start !== '2026-08-23' || thu.end !== '2026-08-27') return 'Thu week = ' + thu.start + '…' + thu.end;
+    if (fri.start !== '2026-08-30') return 'Fri rolled to ' + fri.start;
+    return need(sat.start === '2026-08-30', 'Sat rolled to ' + sat.start);
+  });
+
+  t('Qatar is a day ahead of UTC late at night', function () {
+    var w = currentWeek(Date.parse('2026-08-29T22:00:00Z'), CONFIG.TIMEZONE);  /* 01:00 Sun 30 Aug in Doha */
+    return need(w.today === '2026-08-30' && w.start === '2026-08-30', 'today = ' + w.today);
+  });
+
+  t('Overlapping sessions get side-by-side lanes; solo ones stay full width', function () {
+    var sim = simulate('', TUE);
+    var mon = layout(sim.model.days[1].sessions);
+    var byName = {};
+    mon.forEach(function (s) { byName[s.person.name] = s; });
+    return need(byName['Abdullah'].lanes === 1 &&
+                byName['Aicha'].lanes === 2 && byName['Aicha'].lane === 0 &&
+                byName['Abdul Hassib'].lanes === 2 && byName['Abdul Hassib'].lane === 1,
+                JSON.stringify(mon.map(function (s) { return s.person.name + ':' + s.lane + '/' + s.lanes; })));
+  });
+
+  t('The base schedule is internally consistent', function () {
+    var bad = [];
+    BASE_SCHEDULE.forEach(function (r, i) {
+      var known = ROSTER.some(function (p) { return p.name === r.person; });
+      var s = hm(r.start), e = hm(r.end);
+      if (!known)                       bad.push('line ' + (i + 1) + ': unknown person ' + r.person);
+      if (s === null || e === null)     bad.push('line ' + (i + 1) + ': unreadable time');
+      else if (e <= s)                  bad.push('line ' + (i + 1) + ': ends before it starts');
+      else if (s < DAY_START_MIN || e > DAY_END_MIN) bad.push('line ' + (i + 1) + ': outside the drawn hours');
+      if (!(r.day >= 0 && r.day <= 4))  bad.push('line ' + (i + 1) + ': day must be 0–4');
+    });
+    return need(bad.length === 0, bad.join('; '));
+  });
+
+  t('Junk input of every shape is survived', function () {
+    var week = currentWeek(Date.parse(TUE), CONFIG.TIMEZONE);
+    [null, undefined, '', ',,,,,', '"unclosed,quote\n2026-09-01,Joy,cancelled', ' binary',
+     'date\n\n\n', 'date,person,status\n2026-09-01,Joy'].forEach(function (junk) {
+      var m = buildWeek(week);
+      applyExceptions(m, validate(toRecords(parseCSV(junk), function () {}), week, function () {}).thisWeek, function () {});
+    });
+    [null, undefined, 42, 'text', {}, [], [null], [{}], [{ ymd: 'nonsense' }]].forEach(function (junk) {
+      applyExceptions(buildWeek(week), junk, function () {});
+    });
+    return '';
+  });
+
+  t('A note that looks like markup is shown as text, not run as code', function () {
+    var sim = simulate(HEAD + '2026-09-01,Joy,cancelled,16:00,,"<img src=x onerror=alert(1)>"\n', TUE);
+    var node = blockEl(sessions(sim, 2, 'Joy')[0]);
+    return need(node.querySelectorAll('img').length === 0 &&
+                node.textContent.indexOf('<img src=x') >= 0, 'flag rendered as ' + node.innerHTML);
+  });
+
+  var pass = R.filter(function (r) { return r.ok; }).length;
+  return { results: R, pass: pass, fail: R.length - pass, total: R.length };
+}
+
+function showTests() {
+  var box = document.getElementById('selftest');
+  if (!box) return;
+  var r = runSelfTests();
+  box.textContent = '';
+
+  var h = el('div', 'st-head');
+  h.appendChild(el('span', null, 'Self-test — '));
+  h.appendChild(el('b', r.fail ? 'bad' : 'good', r.pass + '/' + r.total + (r.fail ? ' passed, ' + r.fail + ' FAILED' : ' passed')));
+  box.appendChild(h);
+  box.appendChild(el('div', 'st-hint', 'Press T or Esc to close. Nothing here is shown to students.'));
+
+  r.results.forEach(function (x) {
+    var line = el('div', 't ' + (x.ok ? 'pass' : 'fail'));
+    line.appendChild(el('span', 'mark', x.ok ? 'PASS' : 'FAIL'));
+    line.appendChild(el('span', null, x.name));
+    if (!x.ok && x.detail) line.appendChild(el('div', 'd', x.detail));
+    box.appendChild(line);
+  });
+
+  box.setAttribute('data-result', r.fail ? 'FAIL' : 'PASS');
+  box.setAttribute('data-score', r.pass + '/' + r.total);
+  box.hidden = false;
+  document.title = (r.fail ? 'SELFTEST FAIL ' : 'SELFTEST PASS ') + r.pass + '/' + r.total;
+  return r;
+}
+
+function hideTests() {
+  var box = document.getElementById('selftest');
+  if (box) box.hidden = true;
+}
+
+/* ─── 11. Wiring ────────────────────────────────────────────────────────── */
+
+global.OH = {
+  CONFIG: CONFIG, ROSTER: ROSTER, BASE_SCHEDULE: BASE_SCHEDULE,
+  parseCSV: parseCSV, toRecords: toRecords, validate: validate,
+  currentWeek: currentWeek, buildWeek: buildWeek, applyExceptions: applyExceptions,
+  layout: layout, hm: hm, prettyRange: prettyRange, validYMD: validYMD,
+  simulate: simulate, runSelfTests: runSelfTests, refresh: refresh, draw: draw
+};
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', function () {
+    try { boot(); }
+    catch (e) { logMsg('error', 'Could not draw the schedule: ' + (e && e.message ? e.message : e)); }
+    if (/[?&]selftest=1/.test(location.search)) showTests();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    var tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || e.metaKey || e.ctrlKey || e.altKey) return;
+    var box = document.getElementById('selftest');
+    var open = box && !box.hidden;
+    if (e.key === 'Escape' && open) { hideTests(); return; }
+    if (e.key && e.key.toLowerCase() === 't') { open ? hideTests() : showTests(); }
+  });
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(fitToScreen, 120);
+  });
+
+  /* paper is drawn at a fixed 1.0px per minute — re-trim for it, then back */
+  window.addEventListener('beforeprint', function () { trimBlocks(1.0); });
+  window.addEventListener('afterprint',  function () { fitToScreen(); });
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && lastFetchMs &&
+        Date.now() - lastFetchMs > CONFIG.REFETCH_AFTER_MS) refresh(false);
+  });
+}
+
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+</body>
+</html>
