@@ -62,7 +62,7 @@ Open `index.html` and edit `BASE_SCHEDULE`, which starts at **line 483**. One li
 session:
 
 ```js
-{ day: 0, person: "Darya", start: "10:00", end: "11:00" },
+{ day: 0, person: "Darya", start: "10:30", end: "11:30" },
 ```
 
 * `day` — `0` Sunday, `1` Monday, `2` Tuesday, `3` Wednesday, `4` Thursday.

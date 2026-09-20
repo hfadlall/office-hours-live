@@ -482,7 +482,7 @@ var ROSTER = [
 
 var BASE_SCHEDULE = [
   /* Sunday    */
-  { day: 0, person: "Darya",        start: "10:00", end: "11:00" },
+  { day: 0, person: "Darya",        start: "10:30", end: "11:30" },
   { day: 0, person: "Instructor",   start: "14:30", end: "15:45" },
   { day: 0, person: "Joy",          start: "16:00", end: "17:00" },
   /* Monday    */
@@ -1465,13 +1465,13 @@ function runSelfTests() {
     return need(bad.length === 0, bad.join('; '));
   });
 
-  t('Darya runs 10:00 – 11:00 on Sunday and Tuesday, one session each day', function () {
+  t('Darya runs 10:30 – 11:30 on Sunday, 10:00 – 11:00 on Tuesday, one session each day', function () {
     var sim = simulate('', TUE);
     var bad = [];
-    [0, 2].forEach(function (d) {
-      var mine = sessions(sim, d, 'Darya');
+    [[0, '10:30', '11:30'], [2, '10:00', '11:00']].forEach(function (want) {
+      var d = want[0], mine = sessions(sim, d, 'Darya');
       if (mine.length !== 1) { bad.push(DAY_LONG[d] + ': ' + mine.length + ' sessions'); return; }
-      if (mine[0].start !== hm('10:00') || mine[0].end !== hm('11:00')) {
+      if (mine[0].start !== hm(want[1]) || mine[0].end !== hm(want[2])) {
         bad.push(DAY_LONG[d] + ': ' + timeSpan(mine[0].start, mine[0].end));
       }
     });
