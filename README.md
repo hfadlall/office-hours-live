@@ -19,7 +19,7 @@ Nothing to build, nothing to install. Open the file, or serve it anywhere.
    `new_time` are the start and end. Add a short `note` if students should know why.
 5. That is it — the page picks it up within about five minutes. Do not delete old rows.
 
-**If you have two sessions on the same day** (Oselumese on Thursdays), the `time`
+**If you have two sessions on the same day**, the `time`
 column is what tells the page which one you mean. Leave it blank and the page will
 not guess: it shows students "check with the CA" instead.
 

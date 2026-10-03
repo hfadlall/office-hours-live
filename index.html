@@ -490,15 +490,15 @@ var BASE_SCHEDULE = [
   { day: 1, person: "Aicha",        start: "15:00", end: "16:00" },
   { day: 1, person: "Abdul Hassib", start: "15:30", end: "16:30" },
   /* Tuesday   */
-  { day: 2, person: "Darya",        start: "10:00", end: "11:00" },
+  { day: 2, person: "Darya",        start: "10:30", end: "11:30" },
   { day: 2, person: "Instructor",   start: "14:30", end: "15:45" },
+  { day: 2, person: "Oselumese",    start: "15:30", end: "16:30" },
   { day: 2, person: "Joy",          start: "16:00", end: "17:00" },
   /* Wednesday */
   { day: 3, person: "Abdullah",     start: "10:00", end: "11:00" },
   { day: 3, person: "Aicha",        start: "15:00", end: "16:00" },
   { day: 3, person: "Abdul Hassib", start: "15:30", end: "16:30" },
   /* Thursday  */
-  { day: 4, person: "Oselumese",    start: "10:00", end: "11:00" },
   { day: 4, person: "Oselumese",    start: "15:30", end: "16:30" }
 ];
 
@@ -1275,6 +1275,12 @@ function runSelfTests() {
     });
   }
   function logged(sim, re) { return sim.logs.some(function (l) { return re.test(l); }); }
+  /* Nobody has two sessions on one day at the moment, so the tests for that case
+     lend Oselumese a Thursday-morning session and take it back afterwards.      */
+  function withSecondThursday(fn) {
+    BASE_SCHEDULE.push({ day: 4, person: 'Oselumese', start: '10:00', end: '11:00' });
+    try { return fn(); } finally { BASE_SCHEDULE.pop(); }
+  }
 
   var TUE  = '2026-09-01T09:00:00Z';   /* Tue 1 Sep 2026, noon in Qatar — week 30 Aug → 3 Sep */
   var NEXT = '2026-09-08T09:00:00Z';   /* the week after                                      */
@@ -1380,20 +1386,24 @@ function runSelfTests() {
     return need(sim.logs.filter(function (l) { return /is not a date/.test(l); }).length === 5, sim.logs.join(' | '));
   });
 
-  t('Ambiguous Thursday row applies to neither session', function () {
+  t('Ambiguous row (two sessions that day, no time) applies to neither session', function () {
+    return withSecondThursday(function () {
     var sim = simulate(HEAD + '2026-09-03,Oselumese,cancelled,,,Conference\n', TUE);
     var thu = sim.model.days[4].sessions;
     if (thu.some(function (s) { return s.state; })) return 'a session was changed anyway';
     if (sim.changes.length) return 'banner claimed a change: ' + sim.changes[0];
     return need(sim.notices.length === 1 && /Check with the CA/.test(sim.notices[0]), 'notices = ' + JSON.stringify(sim.notices));
+    });
   });
 
-  t('A time singles out the right Thursday session', function () {
+  t('A time singles out the right one of two sessions on the same day', function () {
+    return withSecondThursday(function () {
     var sim = simulate(HEAD + '2026-09-03,Oselumese,cancelled,15:30,,\n', TUE);
     var early = sessions(sim, 4, 'Oselumese', '10:00')[0];
     var late  = sessions(sim, 4, 'Oselumese', '15:30')[0];
     return need(late.state === 'cancelled' && !early.state && sim.notices.length === 0,
                 'early=' + early.state + ' late=' + late.state);
+    });
   });
 
   t('A 12-hour time still matches (3:30 finds the 15:30 session)', function () {
@@ -1451,6 +1461,14 @@ function runSelfTests() {
                 JSON.stringify(mon.map(function (s) { return s.person.name + ':' + s.lane + '/' + s.lanes; })));
   });
 
+  t('Tuesday afternoon: Oselumese sits beside the Instructor and Joy in two lanes', function () {
+    var sim = simulate('', TUE);
+    var at = {};
+    layout(sim.model.days[2].sessions).forEach(function (s) { at[s.person.name] = s.lane + '/' + s.lanes; });
+    return need(at['Instructor'] === '0/2' && at['Oselumese'] === '1/2' && at['Joy'] === '0/2' && at['Darya'] === '0/1',
+                JSON.stringify(at));
+  });
+
   t('The base schedule is internally consistent', function () {
     var bad = [];
     BASE_SCHEDULE.forEach(function (r, i) {
@@ -1465,16 +1483,19 @@ function runSelfTests() {
     return need(bad.length === 0, bad.join('; '));
   });
 
-  t('Darya runs 10:30 – 11:30 on Sunday, 10:00 – 11:00 on Tuesday, one session each day', function () {
+  t('Darya runs 10:30 – 11:30 on Sunday and Tuesday, Oselumese 3:30 – 4:30 on Tuesday and Thursday', function () {
     var sim = simulate('', TUE);
     var bad = [];
-    [[0, '10:30', '11:30'], [2, '10:00', '11:00']].forEach(function (want) {
-      var d = want[0], mine = sessions(sim, d, 'Darya');
-      if (mine.length !== 1) { bad.push(DAY_LONG[d] + ': ' + mine.length + ' sessions'); return; }
-      if (mine[0].start !== hm(want[1]) || mine[0].end !== hm(want[2])) {
-        bad.push(DAY_LONG[d] + ': ' + timeSpan(mine[0].start, mine[0].end));
+    [['Darya', 0, '10:30', '11:30'], ['Darya', 2, '10:30', '11:30'],
+     ['Oselumese', 2, '15:30', '16:30'], ['Oselumese', 4, '15:30', '16:30']].forEach(function (want) {
+      var who = want[0], d = want[1], mine = sessions(sim, d, who);
+      if (mine.length !== 1) { bad.push(who + ' ' + DAY_LONG[d] + ': ' + mine.length + ' sessions'); return; }
+      if (mine[0].start !== hm(want[2]) || mine[0].end !== hm(want[3])) {
+        bad.push(who + ' ' + DAY_LONG[d] + ': ' + timeSpan(mine[0].start, mine[0].end));
       }
     });
+    var lines = BASE_SCHEDULE.filter(function (r) { return r.person === 'Darya' || r.person === 'Oselumese'; }).length;
+    if (lines !== 4) bad.push(lines + ' Darya/Oselumese lines in BASE_SCHEDULE, expected 4');
     return need(bad.length === 0, bad.join('; '));
   });
 
