@@ -493,7 +493,7 @@ var BASE_SCHEDULE = [
   { day: 2, person: "Darya",        start: "10:30", end: "11:30" },
   { day: 2, person: "Instructor",   start: "14:30", end: "15:45" },
   { day: 2, person: "Oselumese",    start: "15:30", end: "16:30" },
-  { day: 2, person: "Joy",          start: "16:00", end: "17:00" },
+  { day: 2, person: "Joy",          start: "13:00", end: "14:00" },
   /* Wednesday */
   { day: 3, person: "Abdullah",     start: "16:00", end: "17:00" },
   { day: 3, person: "Aicha",        start: "15:00", end: "16:00" },
@@ -1288,7 +1288,7 @@ function runSelfTests() {
   var HEAD = 'date,person,status,time,new_time,note\n';
 
   t('CSV: quoted commas, doubled quotes, CRLF, blank lines', function () {
-    var rows = parseCSV('date,person,status,time,new_time,note\r\n\r\n2026-09-01,Joy,cancelled,16:00,,"Sick, back on ""Sunday"""\r\n\r\n');
+    var rows = parseCSV('date,person,status,time,new_time,note\r\n\r\n2026-09-01,Joy,cancelled,13:00,,"Sick, back on ""Sunday"""\r\n\r\n');
     if (rows.length !== 2) return 'expected 2 rows, got ' + rows.length;
     return need(rows[1][5] === 'Sick, back on "Sunday"', 'note cell was ' + JSON.stringify(rows[1][5]));
   });
@@ -1305,7 +1305,7 @@ function runSelfTests() {
   });
 
   t('CSV: columns read in order when the header is missing', function () {
-    var sim = simulate('2026-09-01,Joy,cancelled,16:00,,\n', TUE);
+    var sim = simulate('2026-09-01,Joy,cancelled,13:00,,\n', TUE);
     return need(sessions(sim, 2, 'Joy')[0].state === 'cancelled' && logged(sim, /No header row/),
                 'state=' + sessions(sim, 2, 'Joy')[0].state);
   });
@@ -1332,9 +1332,9 @@ function runSelfTests() {
   });
 
   t('Cancellation carries the note into the block and the banner', function () {
-    var sim = simulate(HEAD + '2026-09-01,Joy,cancelled,16:00,,Travelling\n', TUE);
+    var sim = simulate(HEAD + '2026-09-01,Joy,cancelled,13:00,,Travelling\n', TUE);
     var tue = sessions(sim, 2, 'Joy')[0];
-    return need(tue.flag === 'Cancelled — Travelling' && /Joy 4:00 cancelled \(Travelling\)/.test(sim.changes[0]),
+    return need(tue.flag === 'Cancelled — Travelling' && /Joy 1:00 cancelled \(Travelling\)/.test(sim.changes[0]),
                 'flag=' + tue.flag + ' | banner=' + sim.changes[0]);
   });
 
@@ -1461,11 +1461,11 @@ function runSelfTests() {
                 JSON.stringify(mon.map(function (s) { return s.person.name + ':' + s.lane + '/' + s.lanes; })));
   });
 
-  t('Tuesday afternoon: Oselumese sits beside the Instructor and Joy in two lanes', function () {
+  t('Tuesday afternoon: Oselumese sits beside the Instructor in two lanes; Joy at 1:00 stays full width', function () {
     var sim = simulate('', TUE);
     var at = {};
     layout(sim.model.days[2].sessions).forEach(function (s) { at[s.person.name] = s.lane + '/' + s.lanes; });
-    return need(at['Instructor'] === '0/2' && at['Oselumese'] === '1/2' && at['Joy'] === '0/2' && at['Darya'] === '0/1',
+    return need(at['Instructor'] === '0/2' && at['Oselumese'] === '1/2' && at['Joy'] === '0/1' && at['Darya'] === '0/1',
                 JSON.stringify(at));
   });
 
@@ -1554,7 +1554,7 @@ function runSelfTests() {
   });
 
   t('A note that looks like markup is shown as text, not run as code', function () {
-    var sim = simulate(HEAD + '2026-09-01,Joy,cancelled,16:00,,"<img src=x onerror=alert(1)>"\n', TUE);
+    var sim = simulate(HEAD + '2026-09-01,Joy,cancelled,13:00,,"<img src=x onerror=alert(1)>"\n', TUE);
     var node = blockEl(sessions(sim, 2, 'Joy')[0]);
     return need(node.querySelectorAll('img').length === 0 &&
                 node.textContent.indexOf('<img src=x') >= 0, 'flag rendered as ' + node.innerHTML);
